@@ -1,0 +1,260 @@
+// ═══════════════════════════════════════════════════════════════════
+// NovusLease+ — Prisma schema (Neon PostgreSQL)
+// ═══════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Users ──────────────────────────────────────────────────────────
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  phone        String?
+  avatarUrl    String?
+  role         UserRole  @default(CUSTOMER)
+  emailVerified Boolean @default(false)
+  kycStatus    KYCStatus @default(PENDING)
+  licenceNumber String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  bookings     Booking[]
+  favourites   CarFavourite[]
+  reviews      Review[]
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  OPERATIONS
+}
+
+enum KYCStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  NOT_REQUIRED
+}
+
+// ─── Fleet / Cars ──────────────────────────────────────────────────
+model Car {
+  id            String          @id @default(cuid())
+  slug          String          @unique
+  name          String
+  brand         String
+  category      CarCategory     @default(HATCHBACK)
+  seats         Int
+  transmission  Transmission    @default(MANUAL)
+  fuelType      FuelType        @default(PETROL)
+  description   String?
+  imageUrl      String?
+  rentalRateHour Decimal         @default(0)        // ₹ per hour
+  monthlySubscription Decimal     @default(0)        // ₹ per month
+  onroadPrice   Decimal         @default(0)         // ₹ on-road price
+  isFeatured    Boolean         @default(false)
+  isAvailable   Boolean         @default(true)
+  leaseParams   LeaseParams?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  bookings      Booking[]
+  variants      CarVariant[]
+  cities        CarAvailability[]
+  favourites    CarFavourite[]
+  reviews       Review[]
+}
+
+enum CarCategory {
+  HATCHBACK
+  SEDAN
+  SUV
+  MUV
+  LUXURY
+  ELECTRIC
+}
+
+enum Transmission {
+  MANUAL
+  AUTOMATIC
+}
+
+enum FuelType {
+  PETROL
+  DIESEL
+  ELECTRIC
+  HYBRID
+  CNG
+}
+
+// Lease-vs-buy calculator presets (per car)
+model LeaseParams {
+  id         String   @id @default(cuid())
+  carId      String   @unique
+  car        Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+  leasePct   Decimal  @default(1.67)  // % of car price as monthly
+  tenure     Int      @default(3)     // years
+  residual   Decimal  @default(50)    // % buyout at end
+  depr       Decimal  @default(15)    // % p.a. depreciation
+  insurance  Decimal  @default(25000) // ₹ annual
+  maint      Decimal  @default(3000)  // ₹ monthly
+  fuel       Decimal  @default(8000)  // ₹ monthly
+}
+
+// City-level availability
+model CarAvailability {
+  id     String @id @default(cuid())
+  carId  String
+  cityId String
+  car    Car    @relation(fields: [carId], references: [id], onDelete: Cascade)
+  city   City   @relation(fields: [cityId], references: [id], onDelete: Cascade)
+
+  @@unique([carId, cityId])
+  @@index([cityId])
+}
+
+model City {
+  id        String           @id @default(cuid())
+  name      String           @unique
+  state     String?
+  isActive  Boolean          @default(true)
+  cars      CarAvailability[]
+  bookings  Booking[]
+}
+
+// ─── Car variants / trims ──────────────────────────────────────────
+model CarVariant {
+  id          String   @id @default(cuid())
+  carId       String
+  name        String   // e.g. "ZXi AMT"
+  price       Decimal  @default(0)
+  car         Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+}
+
+// ─── Bookings ──────────────────────────────────────────────────────
+model Booking {
+  id            String        @id @default(cuid())
+  bookingRef    String        @unique
+  userId        String
+  carId         String
+  cityId        String
+  bookingType   BookingType   @default(DAILY)
+  status        BookingStatus @default(PENDING)
+  startDate     DateTime
+  endDate       DateTime
+  deliveryType  DeliveryType  @default(PICKUP)
+  address       String?
+  kmPackage     KMPackage     @default(KM120)
+  baseAmount    Decimal
+  discountAmount Decimal      @default(0)
+  totalAmount   Decimal
+  promoCode     String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id])
+  car           Car           @relation(fields: [carId], references: [id])
+  city          City          @relation(fields: [cityId], references: [id])
+  payments      Payment[]
+}
+
+enum BookingType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  SUBSCRIPTION
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  PICKED_UP
+  RETURNED
+}
+
+enum DeliveryType {
+  PICKUP
+  DOORSTEP
+  AIRPORT
+  SPOC
+}
+
+enum KMPackage {
+  KM120
+  KM300
+  UNLIMITED
+}
+
+// ─── Payments ──────────────────────────────────────────────────────
+model Payment {
+  id             String      @id @default(cuid())
+  bookingId      String
+  booking        Booking     @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount         Decimal
+  method         PaymentMethod @default(UPI)
+  status         PaymentStatus @default(PENDING)
+  gatewayTxnId   String?
+  paidAt         DateTime?
+  createdAt      DateTime    @default(now())
+}
+
+enum PaymentMethod {
+  UPI
+  CARD
+  NETBANKING
+  WALLET
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+// ─── Deals / Promotions ────────────────────────────────────────────
+model Promotion {
+  id            String       @id @default(cuid())
+  code          String       @unique
+  title         String
+  description   String?
+  discountPct   Decimal      @default(0)
+  minDays       Int          @default(1)
+  applicableTo   BookingType?
+  startsAt      DateTime?
+  endsAt        DateTime?
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+}
+
+// ─── Favourites & Reviews ──────────────────────────────────────────
+model CarFavourite {
+  id        String   @id @default(cuid())
+  userId    String
+  carId     String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  car       Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, carId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  userId    String
+  carId     String?
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  car       Car?     @relation(fields: [carId], references: [id])
+}
