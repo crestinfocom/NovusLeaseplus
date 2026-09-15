@@ -199,6 +199,7 @@ test.describe("NovusLease+ homepage", () => {
     await burger.click();
     await expect(menu).toHaveClass(/open/);
     await expect(burger).toHaveAttribute("aria-expanded", "true");
+    await expect(page.locator(".mobile-links")).toHaveCSS("display", "block");
     await expect(menu.locator(".mobile-links a")).toHaveCount(6);
     await expect(menu).toContainText("Login / Signup");
     await expect(menu).toContainText("Book a car");

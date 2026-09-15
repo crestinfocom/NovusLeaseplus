@@ -307,6 +307,10 @@
     box-shadow: var(--shadow);
     padding: 10px 20px 22px;
   }
+  .mobile-menu .mobile-links {
+    display: block;
+    height: auto;
+  }
 
   /* hero */
   .hero {
