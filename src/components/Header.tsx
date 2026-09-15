@@ -1,9 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 
+const NAV_LINKS = [
+  { href: "#offers", label: "Deals" },
+  { href: "#models", label: "Fleet" },
+  { href: "#calc", label: "Lease vs Buy" },
+  { href: "#how", label: "How it works" },
+  { href: "#why", label: "Why us" },
+  { href: "#faq", label: "FAQ" },
+];
+
 export default function Header() {
+  const [open, setOpen] = useState(false);
+
   useEffect(() => {
     const hdr = document.getElementById("hdr");
     if (!hdr) return;
@@ -11,6 +22,21 @@ export default function Header() {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth > 1000) setOpen(false);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  function go(id: string) {
+    setOpen(false);
+    window.setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    }, 30);
+  }
 
   return (
     <header id="hdr">
@@ -28,36 +54,63 @@ export default function Header() {
             />
           </a>
           <div className="navlinks">
-            <a href="#offers">Deals</a>
-            <a href="#models">Fleet</a>
-            <a href="#calc">Lease vs Buy</a>
-            <a href="#how">How it works</a>
-            <a href="#why">Why us</a>
-            <a href="#faq">FAQ</a>
+            {NAV_LINKS.map((l) => (
+              <a key={l.href} href={l.href}>
+                {l.label}
+              </a>
+            ))}
           </div>
           <div className="nav-cta">
             <a className="btn btn-ghost" href="/login">
               Login / Signup
             </a>
-            <a className="btn btn-dark" href="#book">
+            <a className="btn btn-dark" href="#book" onClick={() => go("book")}>
               Book a car →
             </a>
-            <div
-              className="burger"
-              role="button"
-              aria-label="Open booking"
-              onClick={() =>
-                document
-                  .getElementById("book")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
+            <button
+              type="button"
+              className={`burger${open ? " open" : ""}`}
+              aria-label={open ? "Close menu" : "Open menu"}
+              aria-expanded={open}
+              aria-controls="mobile-menu"
+              data-testid="burger"
+              onClick={() => setOpen((v) => !v)}
             >
               <span></span>
               <span></span>
               <span></span>
-            </div>
+            </button>
           </div>
         </nav>
+      </div>
+
+      <div
+        id="mobile-menu"
+        className={`mobile-menu${open ? " open" : ""}`}
+        data-testid="mobile-menu"
+      >
+        <nav className="mobile-links" aria-label="Mobile">
+          {NAV_LINKS.map((l) => (
+            <a
+              key={l.href}
+              href={l.href}
+              onClick={(e) => {
+                e.preventDefault();
+                go(l.href.slice(1));
+              }}
+            >
+              {l.label}
+            </a>
+          ))}
+        </nav>
+        <div className="mobile-actions">
+          <a className="btn btn-ghost" href="/login">
+            Login / Signup
+          </a>
+          <a className="btn btn-dark" href="#book" onClick={() => go("book")}>
+            Book a car →
+          </a>
+        </div>
       </div>
     </header>
   );
