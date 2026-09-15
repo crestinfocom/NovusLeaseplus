@@ -1,7 +1,9 @@
 // NovusLease+ seed script (Neon PostgreSQL)
 // Run with: npm run db:seed
+import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import { randomBytes, scryptSync } from "node:crypto";
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -18,8 +20,67 @@ if (!connectionString || connectionString.includes("USER:PASSWORD")) {
 const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
+const DEMO_PASSWORD = "demo1234";
+
+function hashPassword(password) {
+  const salt = randomBytes(16).toString("hex");
+  const derived = scryptSync(password, salt, 64, { N: 16384, r: 8, p: 1 });
+  return `scrypt:${salt}:${derived.toString("hex")}`;
+}
+
+async function seedDemoUsers() {
+  const passwordHash = hashPassword(DEMO_PASSWORD);
+  const demoUsers = [
+    {
+      email: "individual@novuslease.in",
+      name: "Aarav Sharma",
+      phone: "9876543210",
+      accountType: "INDIVIDUAL",
+    },
+    {
+      email: "corporate@novuslease.in",
+      name: "Priya Nair",
+      phone: "9880765432",
+      accountType: "CORPORATE",
+      companyName: "Acme Logistics Pvt. Ltd.",
+      gstin: "27ABCDE1234F1Z5",
+    },
+    {
+      email: "personaldriver@novuslease.in",
+      name: "Rohan Verma",
+      phone: "9765432109",
+      accountType: "PERSONAL_DRIVER",
+      licenceNumber: "MH01 2021 0001",
+      licenceExpiry: new Date("2028-01-01"),
+    },
+    {
+      email: "commercialdriver@novuslease.in",
+      name: "Suresh Kumar",
+      phone: "9654321098",
+      accountType: "COMMERCIAL_DRIVER",
+      licenceNumber: "DL-04 2022 00321",
+      licenceClass: "Transport",
+      yearsExperience: 6,
+      operatingCity: "Bengaluru",
+    },
+  ];
+
+  for (const user of demoUsers) {
+    const { email, ...rest } = user;
+    const created = await prisma.user.upsert({
+      where: { email },
+      update: rest,
+      create: { ...rest, email, passwordHash },
+    });
+    console.log(`✓ demo ${created.accountType.toLowerCase()} account — ${created.email}`);
+  }
+  console.log(`  password for all demo accounts: ${DEMO_PASSWORD}`);
+}
+
 async function main() {
   console.log("Seeding NovusLease+ …");
+
+  await seedDemoUsers();
 
   // Cities
   const cities = await prisma.city.createMany({

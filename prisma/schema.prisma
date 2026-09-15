@@ -21,7 +21,14 @@ model User {
   role         UserRole  @default(CUSTOMER)
   emailVerified Boolean @default(false)
   kycStatus    KYCStatus @default(PENDING)
+  accountType  AccountType @default(INDIVIDUAL)
+  companyName  String?
+  gstin        String?
   licenceNumber String?
+  licenceExpiry DateTime?
+  licenceClass  String?
+  yearsExperience Int?
+  operatingCity String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -41,6 +48,13 @@ enum KYCStatus {
   VERIFIED
   REJECTED
   NOT_REQUIRED
+}
+
+enum AccountType {
+  INDIVIDUAL
+  CORPORATE
+  PERSONAL_DRIVER
+  COMMERCIAL_DRIVER
 }
 
 // ─── Fleet / Cars ──────────────────────────────────────────────────

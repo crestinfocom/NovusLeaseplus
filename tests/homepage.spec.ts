@@ -182,4 +182,30 @@ test.describe("NovusLease+ homepage", () => {
     await page.waitForTimeout(300);
     await expect(header).toHaveClass(/scrolled/);
   });
+
+  test("mobile hamburger opens and closes the navigation menu", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+
+    const burger = page.locator('[data-testid="burger"]');
+    const menu = page.locator('[data-testid="mobile-menu"]');
+
+    await expect(burger).toBeVisible();
+    await expect(burger).toHaveAttribute("aria-expanded", "false");
+    await expect(menu).not.toHaveClass(/open/);
+
+    await burger.click();
+    await expect(menu).toHaveClass(/open/);
+    await expect(burger).toHaveAttribute("aria-expanded", "true");
+    await expect(page.locator(".mobile-links")).toHaveCSS("display", "block");
+    await expect(menu.locator(".mobile-links a")).toHaveCount(6);
+    await expect(menu).toContainText("Login / Signup");
+    await expect(menu).toContainText("Book a car");
+
+    await menu.locator(".mobile-links a", { hasText: "Fleet" }).click();
+    await expect(menu).not.toHaveClass(/open/);
+    await expect(burger).toHaveAttribute("aria-expanded", "false");
+  });
 });
