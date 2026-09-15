@@ -74,16 +74,24 @@ Login, signup and forgot-password pages live at `/login`, `/signup` and `/forgot
 
 ### Demo accounts
 
-`npm run db:seed` upserts a demo account for each type (re-run anytime):
+`npm run db:seed` upserts a demo account for each type/role, each with its **own unique password** (re-run anytime):
 
-| Type | Email | Password |
+| Type / Role | Email | Password |
 | --- | --- | --- |
-| Individual | `individual@novuslease.in` | `demo1234` |
-| Corporate | `corporate@novuslease.in` | `demo1234` |
-| Personal Driver | `personaldriver@novuslease.in` | `demo1234` |
-| Commercial Driver | `commercialdriver@novuslease.in` | `demo1234` |
+| Admin | `admin@novuslease.in` | `Nova@admin1` |
+| Operations | `operations@novuslease.in` | `Nova@ops2024` |
+| Individual | `individual@novuslease.in` | `Nova@user1` |
+| Corporate | `corporate@novuslease.in` | `Nova@corp1` |
+| Personal Driver | `personaldriver@novuslease.in` | `Nova@pdrive1` |
+| Commercial Driver | `commercialdriver@novuslease.in` | `Nova@cdrive1` |
 
-The login page also lists these under a **“Demo accounts”** panel for quick testing.
+The login page lists these under a **“Demo accounts”** panel for quick testing.
+
+### Admin console
+
+The admin portal lives at `/admin` (redirects to `/admin/dashboard`) with a separate login at `/admin/login`. It mirrors `Design/NovusLease-plus-admin.html` and is split into **Dashboard, Bookings, Fleet, Customers, Offers & Codes** and **Settings** views (all behind an ADMIN-role session cookie signed with `AUTH_SECRET`).
+
+Sign in with `admin@novuslease.in` / `Nova@admin1`.
 
 ### Auth API routes
 
@@ -115,6 +123,13 @@ src/
     login/                    # login page + form
     signup/                   # signup with 4 account types
     forgot-password/          # password reset page
+    admin/                    # admin console (mirrors Design/NovusLease-plus-admin.html)
+      admin.css               # admin shell/login styles (scoped under .admin)
+      login/                  # admin login page + form (ADMIN role only)
+      (panel)/                # guarded shell: sidebar + topbar + global search + toasts
+        dashboard/ bookings/ fleet/ customers/ offers/ settings/   # the six views
+    api/admin/                # admin APIs (login/logout/session/stats/bookings/cars/
+                              #   customers/promotions/meta) — all behind an ADMIN session
   components/                 # one component per homepage section
     Header (mobile hamburger menu), Hero, BookingWidget, FleetLogos, Usp,
     Offers, Models, LeaseCalculator, HowItWorks, Showcase, WhyUs,
@@ -124,10 +139,16 @@ src/
     calc-bus.ts               # event bus: "Lease this car" → calculator prefill
     password.ts               # scrypt password hashing / verification
     account-type.ts           # client ⇄ Prisma account-type mapping
+    admin-auth.ts             # HMAC-signed admin session cookie (nl_admin)
+    admin-format.ts           # INR/date/pill formatters for the console
+    admin-api.ts              # requireAdmin guard for /api/admin/* routes
+    search-bus.ts / toast-bus.tsx   # console-wide search + toast buses
 tests/
   homepage.spec.ts            # homepage E2E (sections, calculator, reveal, mobile menu)
   auth.spec.ts                # login / signup / forgot-password E2E
   ui.spec.ts                  # cross-viewport render checks + screenshots
+  admin.spec.ts               # admin login/guard, all six views, seeded rows, logout
+  admin-ui.spec.ts            # every admin view at desktop/tablet/mobile (no overflow)
 ```
 
 ## Scripts
@@ -157,8 +178,14 @@ npm run test:e2e
 ```
 
 - `tests/auth.spec.ts` — login/signup/forgot-password flows incl. the seeded demo accounts
+- `tests/admin.spec.ts` — admin console: unauthenticated redirect, ADMIN-only login, operations-blocked (403), navigation across all six views, seeded rows, sign-out
 - `tests/homepage.spec.ts` — homepage sections, calculator, reveal animations, mobile hamburger menu
-- `tests/ui.spec.ts` — renders every page at desktop/tablet/mobile sizes, asserts no horizontal overflow, and saves screenshots to `test-results/ui/`
+- `tests/ui.spec.ts` — renders every public page at desktop/tablet/mobile sizes, asserts no horizontal overflow, saves screenshots to `test-results/ui/`
+- `tests/admin-ui.spec.ts` — renders every admin view at desktop/tablet/mobile sizes, asserts no horizontal overflow (logged in as admin), saves screenshots to `test-results/ui/`
+
+## Admin console
+
+Admin lives at `/admin` (redirects to `/admin/dashboard`; login at `/admin/login`). It uses an HMAC-signed session cookie (`nl_admin`, 7 days) signed with `AUTH_SECRET` — set it in `.env` for anything beyond local dev (a dev fallback exists). Only `ADMIN`-role accounts can open the console; `OPERATIONS` accounts are rejected with a 403 message. The console mirrors `Design/NovusLease-plus-admin.html` with **Dashboard, Bookings, Fleet, Customers, Offers & Codes** and **Settings** views, global search, and toast notifications.
 
 ## Features ported from the design
 

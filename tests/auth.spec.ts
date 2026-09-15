@@ -36,7 +36,7 @@ test.describe("NovusLease+ account auth pages", () => {
   test("login accepts the seeded individual account", async ({ page }) => {
     await page.goto("/login");
     await page.locator("#email").fill("individual@novuslease.in");
-    await page.locator("#password").fill("demo1234");
+    await page.locator("#password").fill("Nova@user1");
     await page.locator(".auth-submit").click();
     await expect(page.locator(".auth-success")).toBeVisible();
     await expect(page.locator(".auth-success")).toContainText("Welcome back");
@@ -45,15 +45,15 @@ test.describe("NovusLease+ account auth pages", () => {
 
   test("login works for every seeded demo account type", async ({ page }) => {
     await page.goto("/login");
-    const cases: [string, string][] = [
-      ["individual@novuslease.in", "Individual"],
-      ["corporate@novuslease.in", "Corporate"],
-      ["personaldriver@novuslease.in", "Personal Driver"],
-      ["commercialdriver@novuslease.in", "Commercial Driver"],
+    const cases: [string, string, string][] = [
+      ["individual@novuslease.in", "Individual", "Nova@user1"],
+      ["corporate@novuslease.in", "Corporate", "Nova@corp1"],
+      ["personaldriver@novuslease.in", "Personal Driver", "Nova@pdrive1"],
+      ["commercialdriver@novuslease.in", "Commercial Driver", "Nova@cdrive1"],
     ];
-    for (const [email, label] of cases) {
+    for (const [email, label, password] of cases) {
       await page.locator("#email").fill(email);
-      await page.locator("#password").fill("demo1234");
+      await page.locator("#password").fill(password);
       await page.locator(".auth-submit").click();
       await expect(page.locator(".auth-success")).toContainText(label);
       await expect(page.locator(".auth-success-email")).toHaveText(email);
@@ -65,7 +65,7 @@ test.describe("NovusLease+ account auth pages", () => {
     await page.goto("/login");
     await expect(page.locator('[data-testid="demo-accounts"]')).toBeVisible();
     await expect(page.locator('[data-testid="demo-accounts"]')).toContainText(
-      "demo1234"
+      "Nova@admin1"
     );
     await expect(page.locator('[data-testid="demo-accounts"]')).toContainText(
       "commercialdriver@novuslease.in"
