@@ -23,20 +23,68 @@ test.describe("NovusLease+ account auth pages", () => {
     );
   });
 
-  test("login accepts valid credentials and shows success", async ({ page }) => {
+  test("login shows error for wrong credentials", async ({ page }) => {
     await page.goto("/login");
-    await page.locator("#email").fill("aarav@example.com");
-    await page.locator("#password").fill("secret123");
+    await page.locator("#email").fill("individual@novuslease.in");
+    await page.locator("#password").fill("wrongpass1");
+    await page.locator(".auth-submit").click();
+    await expect(page.locator(".f-error-block")).toContainText(
+      "Invalid email or password"
+    );
+  });
+
+  test("login accepts the seeded individual account", async ({ page }) => {
+    await page.goto("/login");
+    await page.locator("#email").fill("individual@novuslease.in");
+    await page.locator("#password").fill("demo1234");
     await page.locator(".auth-submit").click();
     await expect(page.locator(".auth-success")).toBeVisible();
-    await expect(page.locator(".auth-success h3")).toContainText("signed in");
+    await expect(page.locator(".auth-success")).toContainText("Welcome back");
+    await expect(page.locator(".auth-success")).toContainText("Individual");
+  });
+
+  test("login works for every seeded demo account type", async ({ page }) => {
+    await page.goto("/login");
+    const cases: [string, string][] = [
+      ["individual@novuslease.in", "Individual"],
+      ["corporate@novuslease.in", "Corporate"],
+      ["personaldriver@novuslease.in", "Personal Driver"],
+      ["commercialdriver@novuslease.in", "Commercial Driver"],
+    ];
+    for (const [email, label] of cases) {
+      await page.locator("#email").fill(email);
+      await page.locator("#password").fill("demo1234");
+      await page.locator(".auth-submit").click();
+      await expect(page.locator(".auth-success")).toContainText(label);
+      await expect(page.locator(".auth-success-email")).toHaveText(email);
+      await page.goto("/login");
+    }
+  });
+
+  test("login page lists the demo accounts", async ({ page }) => {
+    await page.goto("/login");
+    await expect(page.locator('[data-testid="demo-accounts"]')).toBeVisible();
+    await expect(page.locator('[data-testid="demo-accounts"]')).toContainText(
+      "demo1234"
+    );
+    await expect(page.locator('[data-testid="demo-accounts"]')).toContainText(
+      "commercialdriver@novuslease.in"
+    );
   });
 
   test("login footer links to signup", async ({ page }) => {
     await page.goto("/login");
     await page.locator(".auth-foot a[href='/signup']").click();
     await expect(page).toHaveURL(/\/signup$/);
-    await expect(page.locator(".auth-head h2")).toContainText("Create your account");
+    await expect(page.locator(".auth-head h2")).toContainText(
+      "Create your account"
+    );
+  });
+
+  test("login forgot-password link opens the reset page", async ({ page }) => {
+    await page.goto("/login");
+    await page.locator("a[href='/forgot-password']").first().click();
+    await expect(page).toHaveURL(/\/forgot-password$/);
   });
 
   test("signup page offers corporate, individual, personal & commercial driver", async ({
@@ -52,7 +100,9 @@ test.describe("NovusLease+ account auth pages", () => {
     ]) {
       await expect(page.locator(`[data-testid="${id}"]`)).toBeVisible();
     }
-    await expect(page.locator('[data-testid="type-individual"]')).toHaveClass(/active/);
+    await expect(
+      page.locator('[data-testid="type-individual"]')
+    ).toHaveClass(/active/);
   });
 
   test("signup switches fields per account type", async ({ page }) => {
@@ -64,7 +114,9 @@ test.describe("NovusLease+ account auth pages", () => {
     await expect(page.locator("#companyName")).toHaveCount(0);
 
     await page.locator('[data-testid="type-corporate"]').click();
-    await expect(page.locator('[data-testid="type-corporate"]')).toHaveClass(/active/);
+    await expect(page.locator('[data-testid="type-corporate"]')).toHaveClass(
+      /active/
+    );
     await expect(grid.locator("#companyName")).toBeVisible();
     await expect(grid.locator("#contactName")).toBeVisible();
     await expect(grid.locator("#workEmail")).toBeVisible();
@@ -82,7 +134,9 @@ test.describe("NovusLease+ account auth pages", () => {
     await expect(grid.locator("#city")).toBeVisible();
   });
 
-  test("signup validates required fields for commercial driver", async ({ page }) => {
+  test("signup validates required fields for commercial driver", async ({
+    page,
+  }) => {
     await page.goto("/signup");
     await page.locator('[data-testid="type-commercial-driver"]').click();
     await page.locator(".auth-submit").click();
@@ -90,49 +144,69 @@ test.describe("NovusLease+ account auth pages", () => {
     expect(count).toBeGreaterThanOrEqual(5);
   });
 
-  test("signup flow completes for each account type", async ({ page }) => {
+  test("signup rejects a duplicate email", async ({ page }) => {
     await page.goto("/signup");
-
-    await page.locator(".auth-submit").click();
-    await page.locator("#fullName").fill("Aarav Sharma");
-    await page.locator("#email").fill("aarav@example.com");
+    await page.locator("#fullName").fill("Duplicate User");
+    await page.locator("#email").fill("individual@novuslease.in");
     await page.locator("#phone").fill("9876543210");
     await page.locator("#password").fill("secret123");
     await page.locator(".auth-submit").click();
-    await expect(page.locator(".auth-success")).toBeVisible();
-    await expect(page.locator(".auth-success")).toContainText(/individual/i);
+    await expect(page.locator(".f-error-block")).toContainText("already exists");
+  });
+
+  test("signup flow completes for each account type", async ({ page }) => {
+    const suffix = Date.now();
+
+    await page.goto("/signup");
+    await page.locator("#fullName").fill("Aarav Sharma");
+    await page.locator("#email").fill(`aarav${suffix}@example.com`);
+    await page.locator("#phone").fill("9876543210");
+    await page.locator("#password").fill("secret123");
+    await page.locator(".auth-submit").click();
+    await expect(page.locator('[data-testid="signup-success"]')).toBeVisible();
+    await expect(page.locator('[data-testid="signup-success"]')).toContainText(
+      /individual/i
+    );
 
     await page.goto("/signup");
     await page.locator('[data-testid="type-corporate"]').click();
     await page.locator("#companyName").fill("Acme Logistics Pvt. Ltd.");
     await page.locator("#contactName").fill("Priya Nair");
-    await page.locator("#workEmail").fill("priya@acme.in");
+    await page.locator("#workEmail").fill(`priya${suffix}@acme.in`);
     await page.locator("#phone").fill("9876543210");
     await page.locator("#password").fill("secret123");
     await page.locator(".auth-submit").click();
-    await expect(page.locator(".auth-success")).toBeVisible();
-    await expect(page.locator(".auth-success")).toContainText(/corporate/i);
+    await expect(page.locator('[data-testid="signup-success"]')).toBeVisible();
+    await expect(page.locator('[data-testid="signup-success"]')).toContainText(
+      /corporate/i
+    );
 
     await page.goto("/signup");
     await page.locator('[data-testid="type-personal-driver"]').click();
     await page.locator("#fullName").fill("Rohan Verma");
-    await page.locator("#email").fill("rohan@example.com");
+    await page.locator("#email").fill(`rohan${suffix}@example.com`);
     await page.locator("#phone").fill("9876543210");
     await page.locator("#licenceNumber").fill("MH01202124");
+    await page.locator("#password").fill("secret123");
     await page.locator(".auth-submit").click();
-    await expect(page.locator(".auth-success")).toContainText(/personal driver/i);
+    await expect(page.locator('[data-testid="signup-success"]')).toContainText(
+      /personal driver/i
+    );
 
     await page.goto("/signup");
     await page.locator('[data-testid="type-commercial-driver"]').click();
     await page.locator("#fullName").fill("Suresh Kumar");
-    await page.locator("#email").fill("suresh@example.com");
+    await page.locator("#email").fill(`suresh${suffix}@example.com`);
     await page.locator("#phone").fill("9876543210");
     await page.locator("#licenceNumber").fill("DL04202200");
     await page.locator("#licenceClass").fill("Transport");
     await page.locator("#experience").fill("6");
     await page.locator("#city").fill("Bengaluru");
+    await page.locator("#password").fill("secret123");
     await page.locator(".auth-submit").click();
-    await expect(page.locator(".auth-success")).toContainText(/commercial driver/i);
+    await expect(page.locator('[data-testid="signup-success"]')).toContainText(
+      /commercial driver/i
+    );
   });
 
   test("signup page fits one screen (no page scroll)", async ({ page }) => {
@@ -140,13 +214,16 @@ test.describe("NovusLease+ account auth pages", () => {
     const metrics = await page.evaluate(() => {
       const root = document.querySelector(".auth") as HTMLElement;
       return {
-        pageOverflow: document.documentElement.scrollHeight - window.innerHeight,
+        pageOverflow:
+          document.documentElement.scrollHeight - window.innerHeight,
         authHeight: root.getBoundingClientRect().height,
         innerHeight: window.innerHeight,
       };
     });
     expect(metrics.pageOverflow).toBeLessThanOrEqual(1);
-    expect(Math.abs(metrics.authHeight - metrics.innerHeight)).toBeLessThanOrEqual(2);
+    expect(Math.abs(metrics.authHeight - metrics.innerHeight)).toBeLessThanOrEqual(
+      2
+    );
   });
 
   test("signup footer links to login", async ({ page }) => {
@@ -154,6 +231,40 @@ test.describe("NovusLease+ account auth pages", () => {
     await page.locator(".auth-foot a[href='/login']").click();
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.locator(".auth-head h2")).toHaveText("Welcome back");
+  });
+
+  test("forgot password page renders and stays on a single screen", async ({
+    page,
+  }) => {
+    await page.goto("/forgot-password");
+    await expect(page.locator(".auth-head h2")).toHaveText("Reset your password");
+    await expect(page.locator("#email")).toBeVisible();
+    const scrollable = await page.evaluate(
+      () => document.documentElement.scrollHeight - window.innerHeight
+    );
+    expect(scrollable).toBeLessThanOrEqual(1);
+  });
+
+  test("forgot password rejects an invalid email", async ({ page }) => {
+    await page.goto("/forgot-password");
+    await page.locator(".auth-submit").click();
+    await expect(page.locator(".f-error")).toContainText("valid email");
+  });
+
+  test("forgot password shows success for a known account", async ({ page }) => {
+    await page.goto("/forgot-password");
+    await page.locator("#email").fill("individual@novuslease.in");
+    await page.locator(".auth-submit").click();
+    await expect(page.locator('[data-testid="forgot-success"]')).toBeVisible();
+    await expect(page.locator('[data-testid="forgot-success"]')).toContainText(
+      "reset link"
+    );
+  });
+
+  test("forgot password footer links back to login", async ({ page }) => {
+    await page.goto("/forgot-password");
+    await page.locator(".auth-foot a[href='/login']").click();
+    await expect(page).toHaveURL(/\/login$/);
   });
 
   test("homepage Login / Signup button opens the login page", async ({ page }) => {

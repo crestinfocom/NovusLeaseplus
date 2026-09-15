@@ -177,6 +177,13 @@ const TYPES: TypeMeta[] = [
         validate: (v) =>
           v && new Date(v) <= new Date() ? "Licence must not be expired" : undefined,
       },
+      {
+        name: "password",
+        label: "Create password",
+        type: "password",
+        autoComplete: "new-password",
+        validate: (v) => (v.length < 6 ? "Password must be at least 6 characters" : undefined),
+      },
     ],
   },
   {
@@ -248,6 +255,13 @@ const TYPES: TypeMeta[] = [
         half: true,
         validate: (v) => (v.trim().length < 2 ? "Enter your operating city" : undefined),
       },
+      {
+        name: "password",
+        label: "Create password",
+        type: "password",
+        autoComplete: "new-password",
+        validate: (v) => (v.length < 6 ? "Password must be at least 6 characters" : undefined),
+      },
     ],
   },
 ];
@@ -256,6 +270,8 @@ export default function SignupForm() {
   const [type, setType] = useState<AccountType>("individual");
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [apiError, setApiError] = useState("");
+  const [created, setCreated] = useState<{ name: string; email: string } | null>(null);
   const [status, setStatus] = useState<"idle" | "busy" | "done">("idle");
 
   const meta = TYPES.find((t) => t.id === type)!;
@@ -282,25 +298,65 @@ export default function SignupForm() {
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setApiError("");
     if (!validate() || status === "busy") return;
     setStatus("busy");
-    window.setTimeout(() => setStatus("done"), 500);
+
+    void signup();
   }
 
-  if (status === "done") {
+  async function signup() {
+    const payload = {
+      accountType: type,
+      name: (values.fullName || values.contactName || "").trim(),
+      email: (values.email || values.workEmail || "").trim(),
+      phone: (values.phone ?? "").trim(),
+      password: values.password ?? "",
+      companyName: (values.companyName ?? "").trim(),
+      gstin: (values.gstin ?? "").trim(),
+      licenceNumber: (values.licenceNumber ?? "").trim(),
+      licenceExpiry: values.licenceExpiry || "",
+      licenceClass: (values.licenceClass ?? "").trim(),
+      experience: (values.experience ?? "").trim(),
+      city: (values.city ?? "").trim(),
+    };
+
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setApiError(data.error ?? "Something went wrong. Please try again.");
+        setStatus("idle");
+        return;
+      }
+      setCreated({ name: data.name, email: data.email });
+      setStatus("done");
+    } catch {
+      setApiError("Network error — please try again.");
+      setStatus("idle");
+    }
+  }
+
+  if (status === "done" && created) {
     return (
-      <div className="auth-success">
+      <div className="auth-success" data-testid="signup-success">
         <span className="auth-success-ic" aria-hidden="true">
           ✓
         </span>
         <h3>
           {meta.id === "corporate"
-            ? "Your corporate account is created"
-            : "Your account is created"}
+            ? "Corporate account ready"
+            : "Account created"}
         </h3>
         <p>
-          Demo mode — no email was sent. Your{" "}
-          <b>{meta.label.toLowerCase()}</b> profile is ready for the next step.
+          Welcome, <b>{created.name.split(" ")[0]}</b> — your{" "}
+          <b>{meta.label.toLowerCase()}</b> account is ready.
+          <br />
+          <small className="auth-success-email">{created.email}</small>
         </p>
         <Link className="btn btn-dark auth-submit" href="/login">
           Go to login
@@ -362,6 +418,8 @@ export default function SignupForm() {
           </div>
         ))}
       </div>
+
+      {apiError && <p className="f-error f-error-block">{apiError}</p>}
 
       <button
         type="submit"

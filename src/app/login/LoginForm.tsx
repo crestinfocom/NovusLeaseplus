@@ -2,13 +2,24 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { AccountType } from "@prisma/client";
+import { accountTypeLabel } from "@/lib/account-type";
+
+type LoginResult = {
+  ok: true;
+  name: string;
+  email: string;
+  accountType: AccountType;
+};
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [apiError, setApiError] = useState("");
   const [status, setStatus] = useState<"idle" | "busy" | "done">("idle");
+  const [account, setAccount] = useState<LoginResult | null>(null);
 
   function validate() {
     const next: { email?: string; password?: string } = {};
@@ -18,23 +29,43 @@ export default function LoginForm() {
     return Object.keys(next).length === 0;
   }
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setApiError("");
     if (!validate() || status === "busy") return;
     setStatus("busy");
-    window.setTimeout(() => setStatus("done"), 500);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setApiError(data.error ?? "Something went wrong. Please try again.");
+        setStatus("idle");
+        return;
+      }
+      setAccount(data as LoginResult);
+      setStatus("done");
+    } catch {
+      setApiError("Network error — please try again.");
+      setStatus("idle");
+    }
   }
 
-  if (status === "done") {
+  if (status === "done" && account) {
     return (
       <div className="auth-success">
         <span className="auth-success-ic" aria-hidden="true">
           ✓
         </span>
-        <h3>You&apos;re signed in</h3>
+        <h3>Welcome back, {account.name.split(" ")[0]}!</h3>
         <p>
-          Welcome back! This demo accepts any valid credentials. In production
-          you&apos;d be redirected to your dashboard.
+          You&apos;re signed in as a{" "}
+          <b>{accountTypeLabel(account.accountType)}</b> account
+          <br />
+          <small className="auth-success-email">{account.email}</small>
         </p>
         <Link className="btn btn-dark auth-submit" href="/">
           Continue to site
@@ -44,62 +75,96 @@ export default function LoginForm() {
   }
 
   return (
-    <form className="auth-card" onSubmit={onSubmit} noValidate>
-      <div className="f-field">
-        <label className="f-label" htmlFor="email">
-          Email address
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          className={`inp${errors.email ? " err" : ""}`}
-          placeholder="you@example.com"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        {errors.email && <p className="f-error">{errors.email}</p>}
-      </div>
-
-      <div className="f-field">
-        <div className="f-label-row">
-          <label className="f-label" htmlFor="password">
-            Password
+    <>
+      <form className="auth-card" onSubmit={onSubmit} noValidate>
+        <div className="f-field">
+          <label className="f-label" htmlFor="email">
+            Email address
           </label>
-          <a className="f-link" href="#">
-            Forgot password?
-          </a>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            className={`inp${errors.email ? " err" : ""}`}
+            placeholder="you@example.com"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          {errors.email && <p className="f-error">{errors.email}</p>}
         </div>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          className={`inp${errors.password ? " err" : ""}`}
-          placeholder="••••••••"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        {errors.password && <p className="f-error">{errors.password}</p>}
-      </div>
 
-      <label className="f-check">
-        <input
-          type="checkbox"
-          checked={remember}
-          onChange={(e) => setRemember(e.target.checked)}
-        />
-        <span>Keep me signed in</span>
-      </label>
+        <div className="f-field">
+          <div className="f-label-row">
+            <label className="f-label" htmlFor="password">
+              Password
+            </label>
+            <Link className="f-link" href="/forgot-password">
+              Forgot password?
+            </Link>
+          </div>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            className={`inp${errors.password ? " err" : ""}`}
+            placeholder="••••••••"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          {errors.password && <p className="f-error">{errors.password}</p>}
+        </div>
 
-      <button type="submit" className="btn btn-gold auth-submit" disabled={status === "busy"}>
-        {status === "busy" ? "Signing in…" : "Sign in"}
-      </button>
+        <label className="f-check">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+          />
+          <span>Keep me signed in</span>
+        </label>
 
-      <p className="auth-alt">
-        Don&apos;t have an account? <Link href="/signup">Create one in 2 minutes</Link>
-      </p>
-    </form>
+        {apiError && <p className="f-error f-error-block">{apiError}</p>}
+
+        <button
+          type="submit"
+          className="btn btn-gold auth-submit"
+          disabled={status === "busy"}
+        >
+          {status === "busy" ? "Signing in…" : "Sign in"}
+        </button>
+
+        <p className="auth-alt">
+          Don&apos;t have an account?{" "}
+          <Link href="/signup">Create one in 2 minutes</Link>
+        </p>
+      </form>
+
+      <details className="auth-demo" data-testid="demo-accounts">
+        <summary>
+          <span className="dot" aria-hidden="true" />
+          Demo accounts — password: <code>demo1234</code>
+        </summary>
+        <ul>
+          <li>
+            <span>Individual</span>
+            <code>individual@novuslease.in</code>
+          </li>
+          <li>
+            <span>Corporate</span>
+            <code>corporate@novuslease.in</code>
+          </li>
+          <li>
+            <span>Personal driver</span>
+            <code>personaldriver@novuslease.in</code>
+          </li>
+          <li>
+            <span>Commercial driver</span>
+            <code>commercialdriver@novuslease.in</code>
+          </li>
+        </ul>
+      </details>
+    </>
   );
 }

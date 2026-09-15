@@ -6,6 +6,9 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: [["list"]],
+  expect: {
+    timeout: 15_000,
+  },
   use: {
     baseURL: "http://localhost:3000",
     screenshot: "only-on-failure",
