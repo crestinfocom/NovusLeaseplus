@@ -20,7 +20,19 @@ if (!connectionString || connectionString.includes("USER:PASSWORD")) {
 const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
-const DEMO_PASSWORD = "demo1234";
+// Unique password per seeded account/role.
+const ACCOUNT_PASSWORDS = {
+  "admin@novuslease.in": "Nova@admin1",
+  "operations@novuslease.in": "Nova@ops2024",
+  "individual@novuslease.in": "Nova@user1",
+  "corporate@novuslease.in": "Nova@corp1",
+  "personaldriver@novuslease.in": "Nova@pdrive1",
+  "commercialdriver@novuslease.in": "Nova@cdrive1",
+  "ananya.rao@novuslease.in": "Nova@ananya1",
+  "rohit.sharma@novuslease.in": "Nova@rohit1",
+  "vikram.singh@novuslease.in": "Nova@vikram1",
+  "sneha.patel@novuslease.in": "Nova@sneha1",
+};
 
 function hashPassword(password) {
   const salt = randomBytes(16).toString("hex");
@@ -28,14 +40,36 @@ function hashPassword(password) {
   return `scrypt:${salt}:${derived.toString("hex")}`;
 }
 
+function daysFromNow(days) {
+  return new Date(Date.now() + days * 86400000);
+}
+
 async function seedDemoUsers() {
-  const passwordHash = hashPassword(DEMO_PASSWORD);
   const demoUsers = [
+    {
+      email: "admin@novuslease.in",
+      name: "Deepak Kumar",
+      phone: "9812345670",
+      role: "ADMIN",
+      accountType: "INDIVIDUAL",
+      kycStatus: "NOT_REQUIRED",
+      operatingCity: "Bengaluru",
+    },
+    {
+      email: "operations@novuslease.in",
+      name: "Neha Kapoor",
+      phone: "9812345671",
+      role: "OPERATIONS",
+      accountType: "INDIVIDUAL",
+      kycStatus: "NOT_REQUIRED",
+      operatingCity: "Bengaluru",
+    },
     {
       email: "individual@novuslease.in",
       name: "Aarav Sharma",
       phone: "9876543210",
       accountType: "INDIVIDUAL",
+      operatingCity: "Bengaluru",
     },
     {
       email: "corporate@novuslease.in",
@@ -44,6 +78,7 @@ async function seedDemoUsers() {
       accountType: "CORPORATE",
       companyName: "Acme Logistics Pvt. Ltd.",
       gstin: "27ABCDE1234F1Z5",
+      operatingCity: "Mumbai",
     },
     {
       email: "personaldriver@novuslease.in",
@@ -52,6 +87,7 @@ async function seedDemoUsers() {
       accountType: "PERSONAL_DRIVER",
       licenceNumber: "MH01 2021 0001",
       licenceExpiry: new Date("2028-01-01"),
+      operatingCity: "Mumbai",
     },
     {
       email: "commercialdriver@novuslease.in",
@@ -63,24 +99,155 @@ async function seedDemoUsers() {
       yearsExperience: 6,
       operatingCity: "Bengaluru",
     },
+    // Customer personas shown in the admin Customers view.
+    {
+      email: "ananya.rao@novuslease.in",
+      name: "Ananya Rao",
+      phone: "9845011223",
+      accountType: "INDIVIDUAL",
+      operatingCity: "Bengaluru",
+    },
+    {
+      email: "rohit.sharma@novuslease.in",
+      name: "Rohit Sharma",
+      phone: "9986044556",
+      accountType: "INDIVIDUAL",
+      operatingCity: "Mumbai",
+    },
+    {
+      email: "vikram.singh@novuslease.in",
+      name: "Vikram Singh",
+      phone: "9740033221",
+      accountType: "INDIVIDUAL",
+      kycStatus: "PENDING",
+      operatingCity: "Delhi NCR",
+    },
+    {
+      email: "sneha.patel@novuslease.in",
+      name: "Sneha Patel",
+      phone: "9635099001",
+      accountType: "INDIVIDUAL",
+      operatingCity: "Ahmedabad",
+    },
   ];
 
+  const byEmail = {};
   for (const user of demoUsers) {
     const { email, ...rest } = user;
+    const password = ACCOUNT_PASSWORDS[email];
+    const passwordHash = hashPassword(password);
     const created = await prisma.user.upsert({
       where: { email },
-      update: rest,
-      create: { ...rest, email, passwordHash },
+      update: { ...rest, passwordHash },
+      create: { ...rest, passwordHash, email },
     });
-    console.log(`✓ demo ${created.accountType.toLowerCase()} account — ${created.email}`);
+    byEmail[email] = created;
+    const role = created.role ?? "CUSTOMER";
+    console.log(`✓ ${role} — ${created.email}  (password: ${password})`);
   }
-  console.log(`  password for all demo accounts: ${DEMO_PASSWORD}`);
+  return byEmail;
+}
+
+async function seedDemoBookings(users) {
+  const bengaluru = await prisma.city.findUnique({ where: { name: "Bengaluru" } });
+  const cityId = bengaluru?.id ?? null;
+  const cars = await prisma.car.findMany({ select: { slug: true, id: true } });
+  const carBySlug = new Map(cars.map((c) => [c.slug, c.id]));
+
+  const demoBookings = [
+    {
+      ref: "B1042",
+      userId: users["ananya.rao@novuslease.in"].id,
+      car: "hyundai-creta",
+      status: "CONFIRMED",
+      start: daysFromNow(-14),
+      end: daysFromNow(76),
+      amount: 75150,
+    },
+    {
+      ref: "B1041",
+      userId: users["corporate@novuslease.in"].id,
+      car: "toyota-innova-crysta",
+      status: "CONFIRMED",
+      start: daysFromNow(-46),
+      end: daysFromNow(44),
+      amount: 136400,
+    },
+    {
+      ref: "B1040",
+      userId: users["rohit.sharma@novuslease.in"].id,
+      car: "maruti-swift",
+      status: "PENDING",
+      start: daysFromNow(-25),
+      end: daysFromNow(3),
+      amount: 15600,
+    },
+    {
+      ref: "B1039",
+      userId: users["sneha.patel@novuslease.in"].id,
+      car: "executive-sedan",
+      status: "CONFIRMED",
+      start: daysFromNow(-62),
+      end: daysFromNow(28),
+      amount: 67200,
+    },
+    {
+      ref: "B1038",
+      userId: users["vikram.singh@novuslease.in"].id,
+      car: "executive-sedan",
+      status: "COMPLETED",
+      start: daysFromNow(-92),
+      end: daysFromNow(-85),
+      amount: 12400,
+    },
+    {
+      ref: "B1037",
+      userId: users["ananya.rao@novuslease.in"].id,
+      car: "maruti-swift",
+      status: "CANCELLED",
+      start: daysFromNow(-122),
+      end: daysFromNow(-118),
+      amount: 8300,
+    },
+  ];
+
+  // Tidy any earlier demo bookings for these accounts that we don't seed now.
+  const refs = demoBookings.map((b) => b.ref);
+  const userIds = [...new Set(demoBookings.map((b) => b.userId))];
+  await prisma.booking.deleteMany({
+    where: { userId: { in: userIds }, bookingRef: { notIn: refs } },
+  });
+
+  for (const b of demoBookings) {
+    const carId = carBySlug.get(b.car);
+    if (!carId || !cityId) continue;
+    const body = {
+      userId: b.userId,
+      carId,
+      cityId,
+      bookingType: "MONTHLY",
+      status: b.status,
+      startDate: b.start,
+      endDate: b.end,
+      deliveryType: "PICKUP",
+      kmPackage: "KM120",
+      baseAmount: b.amount,
+      discountAmount: 0,
+      totalAmount: b.amount,
+    };
+    const created = await prisma.booking.upsert({
+      where: { bookingRef: b.ref },
+      update: body,
+      create: { ...body, bookingRef: b.ref },
+    });
+    console.log(`✓ demo booking ${created.bookingRef} (${b.status})`);
+  }
 }
 
 async function main() {
   console.log("Seeding NovusLease+ …");
 
-  await seedDemoUsers();
+  const users = await seedDemoUsers();
 
   // Cities
   const cities = await prisma.city.createMany({
@@ -178,18 +345,25 @@ async function main() {
     console.log(`✓ ${created.name}`);
   }
 
-  // Promotions from the homepage
+  // Promotions from the homepage + a festive offer for the admin Offers view
   await prisma.promotion.createMany({
     data: [
       { code: "NOVUS10", title: "1–3 rental days", description: "10% off quick weekend escapes", discountPct: 10, minDays: 1 },
       { code: "NOVUS15", title: "3–5 rental days", description: "15% off road trips", discountPct: 15, minDays: 3 },
       { code: "NOVUS20", title: "5+ days & subscriptions", description: "20% off extended drives", discountPct: 20, minDays: 5 },
+      { code: "FESTIVE25", title: "Diwali special", description: "Flat 25% off flagship vehicles", discountPct: 25, minDays: 2, endsAt: daysFromNow(30) },
     ],
     skipDuplicates: true,
   });
-  console.log("✓ promotions NOVUS10 / NOVUS15 / NOVUS20");
+  console.log("✓ promotions NOVUS10 / NOVUS15 / NOVUS20 / FESTIVE25");
+
+  await seedDemoBookings(users);
 
   console.log("Seeding complete.");
+  console.log("Demo credentials (unique per role/account):");
+  for (const [email, pw] of Object.entries(ACCOUNT_PASSWORDS)) {
+    console.log(`  ${email.padEnd(34)} → ${pw}`);
+  }
 }
 
 main()

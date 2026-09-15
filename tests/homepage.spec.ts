@@ -50,6 +50,14 @@ test.describe("NovusLease+ homepage", () => {
     const revealCount = await page.locator(".reveal").count();
     expect(revealCount).toBeGreaterThan(30);
     await revealAll(page);
+    await page.waitForFunction(
+      () => {
+        const els = Array.from(document.querySelectorAll(".reveal"));
+        return els.length > 30 && els.every((el) => el.classList.contains("in"));
+      },
+      undefined,
+      { timeout: 10_000 }
+    );
     const settled = await page
       .locator(".reveal")
       .evaluateAll((els) => els.every((el) => el.classList.contains("in")));

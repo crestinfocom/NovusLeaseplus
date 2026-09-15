@@ -144,24 +144,32 @@ export default function LoginForm() {
       <details className="auth-demo" data-testid="demo-accounts">
         <summary>
           <span className="dot" aria-hidden="true" />
-          Demo accounts — password: <code>demo1234</code>
+          Demo accounts — unique password per role
         </summary>
         <ul>
           <li>
+            <span>Admin</span>
+            <code>admin@novuslease.in — Nova@admin1</code>
+          </li>
+          <li>
+            <span>Operations</span>
+            <code>operations@novuslease.in — Nova@ops2024</code>
+          </li>
+          <li>
             <span>Individual</span>
-            <code>individual@novuslease.in</code>
+            <code>individual@novuslease.in — Nova@user1</code>
           </li>
           <li>
             <span>Corporate</span>
-            <code>corporate@novuslease.in</code>
+            <code>corporate@novuslease.in — Nova@corp1</code>
           </li>
           <li>
             <span>Personal driver</span>
-            <code>personaldriver@novuslease.in</code>
+            <code>personaldriver@novuslease.in — Nova@pdrive1</code>
           </li>
           <li>
             <span>Commercial driver</span>
-            <code>commercialdriver@novuslease.in</code>
+            <code>commercialdriver@novuslease.in — Nova@cdrive1</code>
           </li>
         </ul>
       </details>

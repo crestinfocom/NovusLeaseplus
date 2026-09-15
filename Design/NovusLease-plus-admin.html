@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NovusLease+ — Admin Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#12203a;--ink-2:#1b2c4a;--ink-3:#243a5e;--ink-soft:#3d4c66;--muted:#6d7a90;
+    --line:#e7e3da;--line-2:#eef0f4;--line-dk:rgba(255,255,255,.1);
+    --cream:#f5f2ec;--paper:#ffffff;--bg:#f4f6f9;
+    --gold:#bf985d;--gold-deep:#a67c42;--gold-soft:#ddc39a;--gold-bg:rgba(191,152,93,.1);
+    --green:#1f7a5f;--green-bg:#e4f4ee;
+    --red:#c0453b;--red-bg:#fbeae8;
+    --blue:#2b6cb0;--blue-bg:#e8f0f9;
+    --amber:#c9871f;--amber-bg:#fbf1dc;
+    --shadow:0 20px 50px -30px rgba(18,32,58,.4);
+    --shadow-sm:0 8px 24px -16px rgba(18,32,58,.4);
+    --r:16px;--r-sm:11px;
+    --ease:cubic-bezier(.22,1,.36,1);
+    --sb:266px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.55}
+  h1,h2,h3,h4{font-family:'Fraunces',serif;font-weight:600;line-height:1.1;letter-spacing:-.01em}
+  a{text-decoration:none;color:inherit}
+  button{font-family:inherit;cursor:pointer}
+  input,select,textarea{font-family:inherit}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:#d4d9e0;border-radius:8px;border:2px solid var(--bg)}
+
+  /* ---------- LOGIN ---------- */
+  .login{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:
+     radial-gradient(60% 60% at 80% 10%,rgba(191,152,93,.16),transparent 60%),
+     radial-gradient(50% 50% at 10% 90%,rgba(27,44,74,.4),transparent 60%),var(--ink)}
+  .login.hidden{display:none}
+  .login-card{width:calc(100% - 40px);max-width:410px;background:var(--paper);border-radius:22px;box-shadow:0 40px 90px -30px rgba(0,0,0,.5);padding:42px 38px;text-align:center;animation:pop .5s var(--ease)}
+  @keyframes pop{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+  .login-card img{height:40px;margin:0 auto 6px}
+  .login-card .sub{color:var(--muted);font-size:.9rem;margin-bottom:28px}
+  .login-card h2{font-size:1.4rem;margin-bottom:4px}
+  .fld{text-align:left;margin-bottom:16px}
+  .fld label{display:block;font-size:.74rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .fld input{width:100%;padding:13px 15px;border:1px solid var(--line);border-radius:var(--r-sm);font-size:.95rem;outline:none;transition:border .2s,box-shadow .2s;background:var(--bg)}
+  .fld input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-bg);background:#fff}
+  .login-btn{width:100%;padding:14px;border:none;border-radius:var(--r-sm);background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#fff;font-weight:700;font-size:.98rem;margin-top:6px;transition:transform .18s,box-shadow .2s;box-shadow:0 14px 30px -14px rgba(166,124,66,.6)}
+  .login-btn:hover{transform:translateY(-2px);box-shadow:0 20px 40px -16px rgba(166,124,66,.7)}
+  .login-hint{margin-top:20px;font-size:.8rem;color:var(--muted);background:var(--cream);padding:11px;border-radius:10px}
+  .login-hint b{color:var(--ink)}
+  .login-err{color:var(--red);font-size:.85rem;margin-top:12px;min-height:18px;font-weight:500}
+
+  /* ---------- APP SHELL ---------- */
+  .app{display:none;min-height:100vh}
+  .app.show{display:block}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sb);background:var(--ink);color:#fff;display:flex;flex-direction:column;z-index:40;transition:transform .3s var(--ease)}
+  .sb-logo{padding:24px 24px 20px;border-bottom:1px solid var(--line-dk)}
+  .sb-logo img{height:34px}
+  .sb-nav{flex:1;padding:16px 14px;overflow-y:auto}
+  .sb-sec{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.4);font-weight:700;padding:14px 12px 8px}
+  .sb-link{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:10px;color:rgba(255,255,255,.72);font-size:.92rem;font-weight:500;margin-bottom:3px;transition:background .2s,color .2s;border:1px solid transparent}
+  .sb-link .ic{width:20px;text-align:center;font-size:1.05rem}
+  .sb-link:hover{background:rgba(255,255,255,.06);color:#fff}
+  .sb-link.active{background:linear-gradient(135deg,rgba(191,152,93,.22),rgba(191,152,93,.08));color:#fff;border-color:rgba(191,152,93,.3)}
+  .sb-link .badge{margin-left:auto;font-size:.7rem;font-weight:700;background:var(--gold);color:#fff;padding:2px 8px;border-radius:100px}
+  .sb-foot{padding:16px;border-top:1px solid var(--line-dk)}
+  .sb-user{display:flex;align-items:center;gap:11px;padding:8px}
+  .sb-user .av{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--gold),var(--gold-deep));display:grid;place-items:center;font-weight:700;color:#fff;font-family:'Fraunces',serif}
+  .sb-user .nm{font-size:.86rem;font-weight:600}
+  .sb-user .rl{font-size:.74rem;color:rgba(255,255,255,.5)}
+  .sb-logout{margin-left:auto;background:rgba(255,255,255,.08);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:.9rem;transition:background .2s}
+  .sb-logout:hover{background:var(--red)}
+
+  .main{margin-left:var(--sb);min-height:100vh;display:flex;flex-direction:column}
+  .topbar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);padding:16px 30px;display:flex;align-items:center;gap:18px}
+  .burger{display:none;background:none;border:1px solid var(--line);border-radius:9px;width:40px;height:40px;font-size:1.1rem}
+  .topbar h1{font-size:1.3rem}
+  .topbar .crumb{font-size:.78rem;color:var(--muted);margin-top:2px}
+  .search{margin-left:auto;position:relative}
+  .search input{width:260px;padding:10px 14px 10px 38px;border:1px solid var(--line);border-radius:100px;background:var(--bg);font-size:.88rem;outline:none;transition:border .2s,box-shadow .2s,width .25s}
+  .search input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-bg);background:#fff;width:300px}
+  .search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
+  .tb-icon{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--paper);display:grid;place-items:center;font-size:1.05rem;position:relative;transition:background .2s}
+  .tb-icon:hover{background:var(--cream)}
+  .tb-icon .dot{position:absolute;top:9px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid #fff}
+
+  .content{padding:30px;flex:1}
+  .view{display:none;animation:fade .4s var(--ease)}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  /* stat cards */
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:26px}
+  .stat{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:22px;position:relative;overflow:hidden;transition:transform .25s var(--ease),box-shadow .25s}
+  .stat:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+  .stat .ic{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;font-size:1.3rem;margin-bottom:16px}
+  .stat .lbl{font-size:.8rem;color:var(--muted);font-weight:500}
+  .stat .num{font-family:'Fraunces',serif;font-size:1.9rem;font-weight:700;margin:3px 0}
+  .stat .chg{font-size:.78rem;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+  .chg.up{color:var(--green)}.chg.down{color:var(--red)}
+  .ic.g{background:var(--gold-bg);color:var(--gold-deep)}
+  .ic.b{background:var(--blue-bg);color:var(--blue)}
+  .ic.gr{background:var(--green-bg);color:var(--green)}
+  .ic.a{background:var(--amber-bg);color:var(--amber)}
+
+  .panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);margin-bottom:24px}
+  .panel-head{display:flex;align-items:center;gap:14px;padding:20px 24px;border-bottom:1px solid var(--line)}
+  .panel-head h3{font-size:1.12rem}
+  .panel-head .sub{font-size:.82rem;color:var(--muted)}
+  .panel-head .right{margin-left:auto;display:flex;gap:10px;align-items:center}
+  .panel-body{padding:24px}
+  .grid-2{display:grid;grid-template-columns:1.6fr 1fr;gap:24px}
+
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:10px;font-weight:600;font-size:.86rem;border:1px solid transparent;transition:transform .18s,box-shadow .2s,background .2s}
+  .btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#fff;box-shadow:0 10px 24px -14px rgba(166,124,66,.6)}
+  .btn-gold:hover{transform:translateY(-2px)}
+  .btn-dark{background:var(--ink);color:#fff}
+  .btn-dark:hover{background:var(--ink-2)}
+  .btn-ghost{background:var(--paper);border-color:var(--line);color:var(--ink)}
+  .btn-ghost:hover{background:var(--cream)}
+  .btn-sm{padding:7px 12px;font-size:.8rem}
+  .btn-icon{width:34px;height:34px;padding:0;justify-content:center;border-radius:9px;background:var(--paper);border:1px solid var(--line)}
+  .btn-icon:hover{background:var(--cream)}
+  .btn-icon.danger:hover{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+
+  /* table */
+  .tbl-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.88rem}
+  thead th{text-align:left;padding:13px 24px;background:var(--bg);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700;border-bottom:1px solid var(--line);white-space:nowrap}
+  tbody td{padding:14px 24px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+  tbody tr{transition:background .15s}
+  tbody tr:hover{background:var(--bg)}
+  tbody tr:last-child td{border-bottom:none}
+  .cell-main{font-weight:600}
+  .cell-sub{font-size:.78rem;color:var(--muted)}
+  .car-cell{display:flex;align-items:center;gap:12px}
+  .car-thumb{width:44px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--ink-2),var(--ink));display:grid;place-items:center;color:var(--gold-soft);font-size:1.1rem;flex-shrink:0}
+  .cust-av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-deep));display:grid;place-items:center;color:#fff;font-weight:700;font-size:.82rem;flex-shrink:0}
+
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:.74rem;font-weight:700;padding:4px 11px;border-radius:100px}
+  .pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+  .pill.available{background:var(--green-bg);color:var(--green)}
+  .pill.leased,.pill.active{background:var(--blue-bg);color:var(--blue)}
+  .pill.maintenance,.pill.pending{background:var(--amber-bg);color:var(--amber)}
+  .pill.retired,.pill.cancelled{background:var(--red-bg);color:var(--red)}
+  .pill.completed{background:var(--cream);color:var(--ink-soft)}
+
+  .rowactions{display:flex;gap:7px}
+
+  /* modal */
+  .modal-back{position:fixed;inset:0;z-index:90;background:rgba(18,32,58,.5);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:20px}
+  .modal-back.show{display:flex;animation:fade .25s}
+  .modal{width:100%;max-width:560px;background:var(--paper);border-radius:20px;box-shadow:0 40px 90px -30px rgba(0,0,0,.5);max-height:90vh;overflow-y:auto;animation:pop .35s var(--ease)}
+  .modal-head{padding:22px 26px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;position:sticky;top:0;background:var(--paper);z-index:2}
+  .modal-head h3{font-size:1.2rem}
+  .modal-head .close{margin-left:auto;width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--paper);font-size:1rem}
+  .modal-head .close:hover{background:var(--red-bg);color:var(--red);border-color:var(--red)}
+  .modal-body{padding:26px}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .form-grid .full{grid-column:1/-1}
+  .form-grid label{display:block;font-size:.74rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+  .form-grid input,.form-grid select,.form-grid textarea{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:.9rem;outline:none;transition:border .2s,box-shadow .2s;background:var(--bg)}
+  .form-grid input:focus,.form-grid select:focus,.form-grid textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-bg);background:#fff}
+  .modal-foot{padding:18px 26px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:var(--paper)}
+
+  /* toast */
+  .toast-wrap{position:fixed;bottom:26px;right:26px;z-index:120;display:flex;flex-direction:column;gap:10px}
+  .toast{background:var(--ink);color:#fff;padding:13px 18px;border-radius:12px;font-size:.88rem;font-weight:500;box-shadow:0 20px 40px -18px rgba(0,0,0,.5);display:flex;align-items:center;gap:10px;animation:slideIn .3s var(--ease);min-width:240px}
+  .toast .ic{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;font-size:.85rem;flex-shrink:0}
+  .toast.success .ic{background:var(--green)}
+  .toast.danger .ic{background:var(--red)}
+  .toast.info .ic{background:var(--gold-deep)}
+  @keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+
+  /* progress bar in fleet util */
+  .util{display:flex;align-items:center;gap:10px}
+  .util .track{width:70px;height:7px;border-radius:6px;background:var(--line-2);overflow:hidden}
+  .util .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--gold),var(--gold-deep))}
+  .util .pct{font-size:.78rem;font-weight:600;color:var(--ink-soft)}
+
+  /* mini bar chart */
+  .chart{display:flex;align-items:flex-end;gap:10px;height:180px;padding-top:10px}
+  .chart .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}
+  .chart .bar{width:100%;max-width:34px;border-radius:7px 7px 0 0;background:linear-gradient(180deg,var(--gold),var(--gold-deep));transition:height .8s var(--ease);position:relative}
+  .chart .bar:hover{filter:brightness(1.08)}
+  .chart .cl{font-size:.72rem;color:var(--muted);font-weight:600}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px}
+  .legend span{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--ink-soft)}
+  .legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+  .empty{padding:50px;text-align:center;color:var(--muted)}
+  .empty .ic{font-size:2.4rem;margin-bottom:10px;opacity:.5}
+
+  .list-item{display:flex;align-items:center;gap:13px;padding:14px 0;border-bottom:1px solid var(--line-2)}
+  .list-item:last-child{border-bottom:none}
+  .list-item .txt{flex:1}
+  .list-item .txt .t{font-weight:600;font-size:.88rem}
+  .list-item .txt .s{font-size:.78rem;color:var(--muted)}
+  .list-item .amt{font-family:'Fraunces',serif;font-weight:600}
+
+  @media(max-width:1050px){
+    .stat-grid{grid-template-columns:1fr 1fr}
+    .grid-2{grid-template-columns:1fr}
+  }
+  @media(max-width:840px){
+    :root{--sb:0px}
+    .sidebar{transform:translateX(-100%);width:266px}
+    .sidebar.open{transform:none}
+    .burger{display:grid;place-items:center}
+    .main{margin-left:0}
+    .search input{width:150px}
+    .search input:focus{width:180px}
+    .form-grid{grid-template-columns:1fr}
+    .content{padding:20px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div class="login" id="loginScreen">
+  <div class="login-card">
+    <img src="data:image/png;base64,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" alt="NovusLease+" />
+    <div class="sub">Admin Console</div>
+    <h2>Welcome back</h2>
+    <div class="sub" style="margin-bottom:24px">Sign in to manage your fleet & bookings</div>
+    <form id="loginForm">
+      <div class="fld"><label>Email address</label><input type="email" id="loginEmail" placeholder="admin@novuslease.com" value="admin@novuslease.com" /></div>
+      <div class="fld"><label>Password</label><input type="password" id="loginPass" placeholder="••••••••" value="admin123" /></div>
+      <button class="login-btn" type="submit">Sign in →</button>
+      <div class="login-err" id="loginErr"></div>
+    </form>
+    <div class="login-hint">Demo credentials — <b>admin@novuslease.com</b> / <b>admin123</b></div>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div class="app" id="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo"><img src="data:image/png;base64,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" alt="NovusLease+" /></div>
+    <nav class="sb-nav">
+      <div class="sb-sec">Overview</div>
+      <a class="sb-link active" data-view="dashboard"><span class="ic">▦</span> Dashboard</a>
+      <a class="sb-link" data-view="bookings"><span class="ic">▤</span> Bookings <span class="badge" id="navBookings">0</span></a>
+      <div class="sb-sec">Management</div>
+      <a class="sb-link" data-view="fleet"><span class="ic">▣</span> Fleet</a>
+      <a class="sb-link" data-view="customers"><span class="ic">◕</span> Customers</a>
+      <a class="sb-link" data-view="offers"><span class="ic">◈</span> Offers & Codes</a>
+      <div class="sb-sec">System</div>
+      <a class="sb-link" data-view="settings"><span class="ic">⚙</span> Settings</a>
+    </nav>
+    <div class="sb-foot">
+      <div class="sb-user">
+        <div class="av">DK</div>
+        <div><div class="nm">Deepak Kumar</div><div class="rl">Super Admin</div></div>
+        <button class="sb-logout" id="logoutBtn" title="Sign out">⏻</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <button class="burger" id="burger">☰</button>
+      <div><h1 id="pageTitle">Dashboard</h1><div class="crumb" id="pageCrumb">Home / Dashboard</div></div>
+      <div class="search">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="globalSearch" placeholder="Search bookings, cars, customers…" />
+      </div>
+      <button class="tb-icon" title="Notifications"><span class="dot"></span>🔔</button>
+      <button class="tb-icon" title="Help">?</button>
+    </div>
+
+    <div class="content">
+      <!-- DASHBOARD -->
+      <section class="view active" id="view-dashboard">
+        <div class="stat-grid" id="statGrid"></div>
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head"><div><h3>Revenue — last 7 months</h3><div class="sub">Monthly gross booking value (₹ lakh)</div></div></div>
+            <div class="panel-body"><div class="chart" id="revChart"></div>
+              <div class="legend"><span><i style="background:var(--gold)"></i>Monthly revenue</span></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Recent bookings</h3></div>
+            <div class="panel-body" id="recentBookings"></div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head"><h3>Fleet status</h3><div class="right"><button class="btn btn-ghost btn-sm" data-goto="fleet">Manage fleet →</button></div></div>
+            <div class="panel-body" id="fleetStatus"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Top-performing cars</h3></div>
+            <div class="panel-body" id="topCars"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BOOKINGS -->
+      <section class="view" id="view-bookings">
+        <div class="panel">
+          <div class="panel-head">
+            <div><h3>All bookings</h3><div class="sub" id="bookCount"></div></div>
+            <div class="right">
+              <select id="bookFilter" class="btn btn-ghost btn-sm" style="padding-right:8px">
+                <option value="all">All statuses</option><option value="active">Active</option>
+                <option value="pending">Pending</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option>
+              </select>
+              <button class="btn btn-gold btn-sm" id="addBooking">＋ New booking</button>
+            </div>
+          </div>
+          <div class="tbl-wrap"><table id="bookingsTable"><thead><tr>
+            <th>Booking</th><th>Customer</th><th>Car</th><th>Dates</th><th>Amount</th><th>Status</th><th></th>
+          </tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- FLEET -->
+      <section class="view" id="view-fleet">
+        <div class="panel">
+          <div class="panel-head">
+            <div><h3>Fleet inventory</h3><div class="sub" id="fleetCount"></div></div>
+            <div class="right">
+              <select id="fleetFilter" class="btn btn-ghost btn-sm" style="padding-right:8px">
+                <option value="all">All statuses</option><option value="available">Available</option>
+                <option value="leased">Leased</option><option value="maintenance">Maintenance</option><option value="retired">Retired</option>
+              </select>
+              <button class="btn btn-gold btn-sm" id="addCar">＋ Add car</button>
+            </div>
+          </div>
+          <div class="tbl-wrap"><table id="fleetTable"><thead><tr>
+            <th>Vehicle</th><th>Reg. no.</th><th>Type</th><th>Monthly lease</th><th>Utilisation</th><th>Status</th><th></th>
+          </tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- CUSTOMERS -->
+      <section class="view" id="view-customers">
+        <div class="panel">
+          <div class="panel-head">
+            <div><h3>Customers</h3><div class="sub" id="custCount"></div></div>
+            <div class="right"><button class="btn btn-gold btn-sm" id="addCust">＋ Add customer</button></div>
+          </div>
+          <div class="tbl-wrap"><table id="custTable"><thead><tr>
+            <th>Customer</th><th>Contact</th><th>City</th><th>Bookings</th><th>Lifetime value</th><th>Status</th><th></th>
+          </tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- OFFERS -->
+      <section class="view" id="view-offers">
+        <div class="panel">
+          <div class="panel-head">
+            <div><h3>Promo codes & offers</h3><div class="sub" id="offerCount"></div></div>
+            <div class="right"><button class="btn btn-gold btn-sm" id="addOffer">＋ New code</button></div>
+          </div>
+          <div class="tbl-wrap"><table id="offerTable"><thead><tr>
+            <th>Code</th><th>Description</th><th>Discount</th><th>Redemptions</th><th>Valid till</th><th>Status</th><th></th>
+          </tr></thead><tbody></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="view" id="view-settings">
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head"><h3>Business profile</h3></div>
+            <div class="panel-body">
+              <div class="form-grid">
+                <div class="full"><label>Company name</label><input value="NovusLease+ Mobility Pvt. Ltd." /></div>
+                <div><label>Support email</label><input value="support@novuslease.com" /></div>
+                <div><label>Phone</label><input value="+91 80 4567 8900" /></div>
+                <div class="full"><label>Registered address</label><input value="Prestige Tower, MG Road, Bengaluru 560001" /></div>
+                <div><label>Base currency</label><select><option>INR (₹)</option><option>USD ($)</option></select></div>
+                <div><label>GST rate</label><select><option>18%</option><option>12%</option><option>28%</option></select></div>
+              </div>
+            </div>
+            <div class="modal-foot" style="position:static;border-radius:0 0 var(--r) var(--r)"><button class="btn btn-gold" onclick="toast('Settings saved','success')">Save changes</button></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Data & preferences</h3></div>
+            <div class="panel-body">
+              <div class="list-item"><div class="txt"><div class="t">Email notifications</div><div class="s">New bookings & cancellations</div></div><label style="cursor:pointer"><input type="checkbox" checked style="width:18px;height:18px;accent-color:var(--gold-deep)"></label></div>
+              <div class="list-item"><div class="txt"><div class="t">Auto-approve subscriptions</div><div class="s">Skip manual review under ₹50k/mo</div></div><label style="cursor:pointer"><input type="checkbox" style="width:18px;height:18px;accent-color:var(--gold-deep)"></label></div>
+              <div class="list-item"><div class="txt"><div class="t">Maintenance reminders</div><div class="s">Alert when a car crosses service km</div></div><label style="cursor:pointer"><input type="checkbox" checked style="width:18px;height:18px;accent-color:var(--gold-deep)"></label></div>
+              <div style="margin-top:20px;display:flex;gap:10px">
+                <button class="btn btn-ghost btn-sm" onclick="exportData()">⬇ Export data (JSON)</button>
+                <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="resetData()">↺ Reset demo data</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-back" id="modalBack">
+  <div class="modal">
+    <div class="modal-head"><h3 id="modalTitle">Edit</h3><button class="close" id="modalClose">✕</button></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="modalCancel">Cancel</button>
+      <button class="btn btn-gold" id="modalSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* ============ SEED DATA + PERSISTENCE ============ */
+const DEFAULTS={
+  fleet:[
+    {id:'C1',name:'Maruti Swift',reg:'KA01AB1234',type:'Hatchback',fuel:'Petrol',lease:15600,util:82,status:'leased'},
+    {id:'C2',name:'Hyundai Creta',reg:'KA05CD5678',type:'SUV',fuel:'Petrol',lease:25050,util:74,status:'leased'},
+    {id:'C3',name:'Toyota Innova Crysta',reg:'KA03EF9012',type:'MUV',fuel:'Diesel',lease:34100,util:91,status:'leased'},
+    {id:'C4',name:'Executive Sedan',reg:'KA02GH3456',type:'Sedan',fuel:'Diesel',lease:63000,util:48,status:'available'},
+    {id:'C5',name:'Tata Nexon',reg:'KA04IJ7890',type:'SUV',fuel:'Diesel',lease:22400,util:66,status:'available'},
+    {id:'C6',name:'Kia Sonet',reg:'KA06KL2345',type:'SUV',fuel:'Petrol',lease:20800,util:0,status:'maintenance'},
+    {id:'C7',name:'Mahindra Scorpio',reg:'KA07MN6789',type:'MUV',fuel:'Diesel',lease:38900,util:70,status:'leased'},
+  ],
+  customers:[
+    {id:'U1',name:'Ananya Rao',email:'ananya.rao@email.com',phone:'+91 98450 11223',city:'Bengaluru',bookings:4,ltv:284000,status:'active'},
+    {id:'U2',name:'Rohit Sharma',email:'rohit.s@email.com',phone:'+91 99860 44556',city:'Mumbai',bookings:2,ltv:96000,status:'active'},
+    {id:'U3',name:'Priya Nair',email:'priya.nair@email.com',phone:'+91 90080 77889',city:'Kochi',bookings:6,ltv:412000,status:'active'},
+    {id:'U4',name:'Vikram Singh',email:'vikram.singh@email.com',phone:'+91 97400 33221',city:'Delhi NCR',bookings:1,ltv:38000,status:'pending'},
+    {id:'U5',name:'Sneha Patel',email:'sneha.p@email.com',phone:'+91 96350 99001',city:'Ahmedabad',bookings:3,ltv:154000,status:'active'},
+  ],
+  bookings:[
+    {id:'B1042',cust:'Ananya Rao',car:'Hyundai Creta',start:'2026-09-02',end:'2026-12-02',amount:75150,status:'active'},
+    {id:'B1041',cust:'Priya Nair',car:'Toyota Innova Crysta',start:'2026-09-01',end:'2027-01-01',amount:136400,status:'active'},
+    {id:'B1040',cust:'Rohit Sharma',car:'Maruti Swift',start:'2026-08-28',end:'2026-09-28',amount:15600,status:'pending'},
+    {id:'B1039',cust:'Sneha Patel',car:'Tata Nexon',start:'2026-08-20',end:'2026-11-20',amount:67200,status:'active'},
+    {id:'B1038',cust:'Vikram Singh',car:'Mahindra Scorpio',start:'2026-08-15',end:'2026-08-22',amount:12400,status:'completed'},
+    {id:'B1037',cust:'Ananya Rao',car:'Kia Sonet',start:'2026-08-10',end:'2026-08-14',amount:8300,status:'cancelled'},
+  ],
+  offers:[
+    {id:'O1',code:'NOVUS10',desc:'10% off 1–3 day rentals',discount:'10%',redeemed:142,till:'2026-12-31',status:'active'},
+    {id:'O2',code:'NOVUS15',desc:'15% off 3–5 day rentals',discount:'15%',redeemed:88,till:'2026-12-31',status:'active'},
+    {id:'O3',code:'NOVUS20',desc:'20% off 5+ days & subscriptions',discount:'20%',redeemed:57,till:'2026-11-30',status:'active'},
+    {id:'O4',code:'FESTIVE25',desc:'Diwali flat 25% off',discount:'25%',redeemed:203,till:'2026-10-25',status:'active'},
+    {id:'O5',code:'WELCOME5',desc:'First-booking ₹500 off',discount:'₹500',redeemed:19,till:'2026-09-01',status:'expired'},
+  ]
+};
+const KEY='novuslease_admin_v1';
+let DB=load();
+function load(){ try{const s=localStorage.getItem(KEY); if(s)return JSON.parse(s);}catch(e){} return JSON.parse(JSON.stringify(DEFAULTS)); }
+function save(){ try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){} }
+
+/* ============ HELPERS ============ */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const inr=n=>'₹'+Number(n).toLocaleString('en-IN');
+const inrShort=n=>{n=+n;if(n>=1e7)return'₹'+(n/1e7).toFixed(2)+'Cr';if(n>=1e5)return'₹'+(n/1e5).toFixed(2)+'L';if(n>=1e3)return'₹'+(n/1e3).toFixed(1)+'K';return'₹'+n;};
+const initials=n=>n.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=p=>p+Math.random().toString(36).slice(2,7).toUpperCase();
+
+function toast(msg,type='info'){
+  const el=document.createElement('div'); el.className='toast '+type;
+  const ic=type==='success'?'✓':type==='danger'?'!':'i';
+  el.innerHTML='<span class="ic">'+ic+'</span>'+esc(msg);
+  $('#toastWrap').appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(40px)';el.style.transition='.3s';setTimeout(()=>el.remove(),300);},2600);
+}
+
+/* ============ LOGIN ============ */
+$('#loginForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const em=$('#loginEmail').value.trim(), pw=$('#loginPass').value;
+  if(em==='admin@novuslease.com'&&pw==='admin123'){
+    sessionStorage.setItem('nl_auth','1'); enterApp();
+  }else{ $('#loginErr').textContent='Invalid credentials. Use the demo login below.'; }
+});
+function enterApp(){ $('#loginScreen').classList.add('hidden'); $('#app').classList.add('show'); renderAll(); }
+$('#logoutBtn').addEventListener('click',()=>{ sessionStorage.removeItem('nl_auth'); location.reload(); });
+if(sessionStorage.getItem('nl_auth')==='1') enterApp();
+
+/* ============ NAV ============ */
+const titles={dashboard:['Dashboard','Home / Dashboard'],bookings:['Bookings','Home / Bookings'],fleet:['Fleet','Home / Fleet'],customers:['Customers','Home / Customers'],offers:['Offers & Codes','Home / Offers'],settings:['Settings','Home / Settings']};
+function go(view){
+  $$('.sb-link').forEach(l=>l.classList.toggle('active',l.dataset.view===view));
+  $$('.view').forEach(v=>v.classList.remove('active'));
+  $('#view-'+view).classList.add('active');
+  $('#pageTitle').textContent=titles[view][0]; $('#pageCrumb').textContent=titles[view][1];
+  $('#sidebar').classList.remove('open');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+$$('.sb-link').forEach(l=>l.addEventListener('click',()=>go(l.dataset.view)));
+document.addEventListener('click',e=>{const g=e.target.closest('[data-goto]'); if(g)go(g.dataset.goto);});
+$('#burger').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
+
+/* ============ RENDER: DASHBOARD ============ */
+function renderDashboard(){
+  const activeBk=DB.bookings.filter(b=>b.status==='active').length;
+  const revenue=DB.bookings.filter(b=>b.status!=='cancelled').reduce((s,b)=>s+b.amount,0);
+  const leased=DB.fleet.filter(c=>c.status==='leased').length;
+  const util=Math.round(DB.fleet.reduce((s,c)=>s+c.util,0)/DB.fleet.length);
+  const stats=[
+    {ic:'g',emo:'💰',lbl:'Total revenue',num:inrShort(revenue),chg:'▲ 12.4%',up:1},
+    {ic:'b',emo:'▤',lbl:'Active bookings',num:activeBk,chg:'▲ 3 this week',up:1},
+    {ic:'gr',emo:'🚗',lbl:'Cars leased',num:leased+' / '+DB.fleet.length,chg:'▲ 2 vs last mo',up:1},
+    {ic:'a',emo:'📊',lbl:'Fleet utilisation',num:util+'%',chg:'▼ 1.2%',up:0},
+  ];
+  $('#statGrid').innerHTML=stats.map(s=>`<div class="stat"><div class="ic ${s.ic}">${s.emo}</div>
+    <div class="lbl">${s.lbl}</div><div class="num">${s.num}</div>
+    <div class="chg ${s.up?'up':'down'}">${s.chg}</div></div>`).join('');
+
+  const rev=[38,44,41,52,49,63,58];
+  const mx=Math.max(...rev);
+  const mo=['Mar','Apr','May','Jun','Jul','Aug','Sep'];
+  $('#revChart').innerHTML=rev.map((v,i)=>`<div class="col"><div class="bar" style="height:${v/mx*100}%" title="₹${v}L"></div><div class="cl">${mo[i]}</div></div>`).join('');
+
+  $('#recentBookings').innerHTML=DB.bookings.slice(0,5).map(b=>`<div class="list-item">
+    <div class="cust-av">${initials(b.cust)}</div>
+    <div class="txt"><div class="t">${esc(b.cust)}</div><div class="s">${esc(b.car)} · ${esc(b.id)}</div></div>
+    <div><div class="amt">${inrShort(b.amount)}</div><div style="text-align:right"><span class="pill ${b.status}">${b.status}</span></div></div>
+  </div>`).join('');
+
+  const counts={available:0,leased:0,maintenance:0,retired:0};
+  DB.fleet.forEach(c=>counts[c.status]++);
+  const total=DB.fleet.length;
+  const segs=[['available','var(--green)'],['leased','var(--blue)'],['maintenance','var(--amber)'],['retired','var(--red)']];
+  $('#fleetStatus').innerHTML=
+    `<div style="display:flex;height:14px;border-radius:8px;overflow:hidden;margin-bottom:18px">`+
+    segs.map(([k,c])=>counts[k]?`<div style="width:${counts[k]/total*100}%;background:${c}" title="${k}: ${counts[k]}"></div>`:'').join('')+`</div>`+
+    segs.map(([k,c])=>`<div class="list-item"><i style="width:10px;height:10px;border-radius:3px;background:${c};display:inline-block"></i>
+      <div class="txt"><div class="t" style="text-transform:capitalize">${k}</div></div>
+      <div class="amt">${counts[k]}</div></div>`).join('');
+
+  const top=[...DB.fleet].sort((a,b)=>b.util-a.util).slice(0,4);
+  $('#topCars').innerHTML=top.map(c=>`<div class="list-item">
+    <div class="car-thumb">🚗</div>
+    <div class="txt"><div class="t">${esc(c.name)}</div><div class="s">${esc(c.type)} · ${inr(c.lease)}/mo</div></div>
+    <div class="util"><div class="track"><div class="fill" style="width:${c.util}%"></div></div><span class="pct">${c.util}%</span></div>
+  </div>`).join('');
+
+  $('#navBookings').textContent=activeBk;
+}
+
+/* ============ RENDER: BOOKINGS ============ */
+function renderBookings(){
+  const f=$('#bookFilter').value;
+  const rows=DB.bookings.filter(b=>f==='all'||b.status===f);
+  $('#bookCount').textContent=rows.length+' booking'+(rows.length!==1?'s':'');
+  const tb=$('#bookingsTable tbody');
+  tb.innerHTML=rows.length?rows.map(b=>`<tr>
+    <td class="cell-main">${esc(b.id)}</td>
+    <td><div class="car-cell"><div class="cust-av">${initials(b.cust)}</div><div>${esc(b.cust)}</div></div></td>
+    <td>${esc(b.car)}</td>
+    <td><div class="cell-main">${b.start}</div><div class="cell-sub">to ${b.end}</div></td>
+    <td class="cell-main">${inr(b.amount)}</td>
+    <td><span class="pill ${b.status}">${b.status}</span></td>
+    <td><div class="rowactions">
+      <button class="btn-icon" title="Edit" onclick="openBooking('${b.id}')">✎</button>
+      <button class="btn-icon danger" title="Delete" onclick="del('bookings','${b.id}','Booking')">🗑</button>
+    </div></td></tr>`).join(''):emptyRow(7,'No bookings match this filter');
+}
+
+/* ============ RENDER: FLEET ============ */
+function renderFleet(){
+  const f=$('#fleetFilter').value;
+  const rows=DB.fleet.filter(c=>f==='all'||c.status===f);
+  $('#fleetCount').textContent=rows.length+' vehicle'+(rows.length!==1?'s':'');
+  const tb=$('#fleetTable tbody');
+  tb.innerHTML=rows.length?rows.map(c=>`<tr>
+    <td><div class="car-cell"><div class="car-thumb">🚗</div><div><div class="cell-main">${esc(c.name)}</div><div class="cell-sub">${esc(c.fuel)}</div></div></div></td>
+    <td class="cell-main" style="font-family:monospace;font-size:.82rem">${esc(c.reg)}</td>
+    <td>${esc(c.type)}</td>
+    <td class="cell-main">${inr(c.lease)}<span class="cell-sub">/mo</span></td>
+    <td><div class="util"><div class="track"><div class="fill" style="width:${c.util}%"></div></div><span class="pct">${c.util}%</span></div></td>
+    <td><span class="pill ${c.status}">${c.status}</span></td>
+    <td><div class="rowactions">
+      <button class="btn-icon" title="Edit" onclick="openCar('${c.id}')">✎</button>
+      <button class="btn-icon danger" title="Delete" onclick="del('fleet','${c.id}','Vehicle')">🗑</button>
+    </div></td></tr>`).join(''):emptyRow(7,'No vehicles match this filter');
+}
+
+/* ============ RENDER: CUSTOMERS ============ */
+function renderCustomers(){
+  $('#custCount').textContent=DB.customers.length+' customers';
+  const tb=$('#custTable tbody');
+  tb.innerHTML=DB.customers.length?DB.customers.map(u=>`<tr>
+    <td><div class="car-cell"><div class="cust-av">${initials(u.name)}</div><div class="cell-main">${esc(u.name)}</div></div></td>
+    <td><div class="cell-main">${esc(u.email)}</div><div class="cell-sub">${esc(u.phone)}</div></td>
+    <td>${esc(u.city)}</td>
+    <td class="cell-main">${u.bookings}</td>
+    <td class="cell-main">${inr(u.ltv)}</td>
+    <td><span class="pill ${u.status}">${u.status}</span></td>
+    <td><div class="rowactions">
+      <button class="btn-icon" title="Edit" onclick="openCust('${u.id}')">✎</button>
+      <button class="btn-icon danger" title="Delete" onclick="del('customers','${u.id}','Customer')">🗑</button>
+    </div></td></tr>`).join(''):emptyRow(7,'No customers yet');
+}
+
+/* ============ RENDER: OFFERS ============ */
+function renderOffers(){
+  $('#offerCount').textContent=DB.offers.length+' codes';
+  const tb=$('#offerTable tbody');
+  tb.innerHTML=DB.offers.length?DB.offers.map(o=>`<tr>
+    <td><span class="cell-main" style="font-family:monospace;background:var(--gold-bg);color:var(--gold-deep);padding:4px 10px;border-radius:7px;font-weight:700">${esc(o.code)}</span></td>
+    <td>${esc(o.desc)}</td>
+    <td class="cell-main">${esc(o.discount)}</td>
+    <td class="cell-main">${o.redeemed}</td>
+    <td>${o.till}</td>
+    <td><span class="pill ${o.status==='active'?'active':'retired'}">${o.status}</span></td>
+    <td><div class="rowactions">
+      <button class="btn-icon" title="Edit" onclick="openOffer('${o.id}')">✎</button>
+      <button class="btn-icon danger" title="Delete" onclick="del('offers','${o.id}','Code')">🗑</button>
+    </div></td></tr>`).join(''):emptyRow(7,'No promo codes');
+}
+
+function emptyRow(cols,msg){return `<tr><td colspan="${cols}"><div class="empty"><div class="ic">🗂</div>${msg}</div></td></tr>`;}
+
+/* ============ MODAL ENGINE ============ */
+let modalCtx=null;
+function openModal(title,fields,onsave){
+  $('#modalTitle').textContent=title;
+  $('#modalBody').innerHTML='<div class="form-grid">'+fields.map(f=>{
+    const full=f.full?' full':''; const val=f.value!=null?esc(f.value):'';
+    if(f.type==='select'){
+      return `<div class="${full}"><label>${f.label}</label><select id="m_${f.key}">`+
+        f.options.map(o=>`<option ${o===f.value?'selected':''}>${o}</option>`).join('')+`</select></div>`;
+    }
+    return `<div class="${full}"><label>${f.label}</label><input id="m_${f.key}" type="${f.type||'text'}" value="${val}" placeholder="${f.ph||''}"/></div>`;
+  }).join('')+'</div>';
+  modalCtx=onsave;
+  $('#modalBack').classList.add('show');
+}
+function closeModal(){ $('#modalBack').classList.remove('show'); modalCtx=null; }
+$('#modalClose').addEventListener('click',closeModal);
+$('#modalCancel').addEventListener('click',closeModal);
+$('#modalBack').addEventListener('click',e=>{if(e.target===$('#modalBack'))closeModal();});
+$('#modalSave').addEventListener('click',()=>{ if(modalCtx)modalCtx(); });
+function fval(k){return document.getElementById('m_'+k).value.trim();}
+
+/* ---- CRUD: FLEET ---- */
+function openCar(id){
+  const c=id?DB.fleet.find(x=>x.id===id):{};
+  openModal(id?'Edit vehicle':'Add vehicle',[
+    {key:'name',label:'Model name',value:c.name,ph:'e.g. Hyundai Creta',full:true},
+    {key:'reg',label:'Registration no.',value:c.reg,ph:'KA01AB1234'},
+    {key:'type',label:'Type',type:'select',options:['Hatchback','Sedan','SUV','MUV'],value:c.type||'SUV'},
+    {key:'fuel',label:'Fuel',type:'select',options:['Petrol','Diesel','EV','Hybrid'],value:c.fuel||'Petrol'},
+    {key:'lease',label:'Monthly lease (₹)',type:'number',value:c.lease},
+    {key:'util',label:'Utilisation (%)',type:'number',value:c.util!=null?c.util:0},
+    {key:'status',label:'Status',type:'select',options:['available','leased','maintenance','retired'],value:c.status||'available'},
+  ],()=>{
+    const rec={name:fval('name'),reg:fval('reg'),type:fval('type'),fuel:fval('fuel'),lease:+fval('lease')||0,util:Math.min(100,Math.max(0,+fval('util')||0)),status:fval('status')};
+    if(!rec.name){toast('Model name is required','danger');return;}
+    if(id){Object.assign(c,rec);toast('Vehicle updated','success');}
+    else{rec.id=uid('C');DB.fleet.unshift(rec);toast('Vehicle added','success');}
+    save();closeModal();renderAll();
+  });
+}
+/* ---- CRUD: BOOKING ---- */
+function openBooking(id){
+  const b=id?DB.bookings.find(x=>x.id===id):{};
+  openModal(id?'Edit booking':'New booking',[
+    {key:'cust',label:'Customer',value:b.cust,ph:'Full name',full:true},
+    {key:'car',label:'Car',value:b.car,ph:'Model',full:true},
+    {key:'start',label:'Start date',type:'date',value:b.start},
+    {key:'end',label:'End date',type:'date',value:b.end},
+    {key:'amount',label:'Amount (₹)',type:'number',value:b.amount},
+    {key:'status',label:'Status',type:'select',options:['pending','active','completed','cancelled'],value:b.status||'pending'},
+  ],()=>{
+    const rec={cust:fval('cust'),car:fval('car'),start:fval('start'),end:fval('end'),amount:+fval('amount')||0,status:fval('status')};
+    if(!rec.cust){toast('Customer is required','danger');return;}
+    if(id){Object.assign(b,rec);toast('Booking updated','success');}
+    else{rec.id='B'+Math.floor(1043+Math.random()*900);DB.bookings.unshift(rec);toast('Booking created','success');}
+    save();closeModal();renderAll();
+  });
+}
+/* ---- CRUD: CUSTOMER ---- */
+function openCust(id){
+  const u=id?DB.customers.find(x=>x.id===id):{};
+  openModal(id?'Edit customer':'Add customer',[
+    {key:'name',label:'Full name',value:u.name,full:true},
+    {key:'email',label:'Email',type:'email',value:u.email},
+    {key:'phone',label:'Phone',value:u.phone},
+    {key:'city',label:'City',type:'select',options:['Bengaluru','Mumbai','Delhi NCR','Hyderabad','Chennai','Pune','Kochi','Ahmedabad'],value:u.city||'Bengaluru'},
+    {key:'bookings',label:'Bookings',type:'number',value:u.bookings!=null?u.bookings:0},
+    {key:'ltv',label:'Lifetime value (₹)',type:'number',value:u.ltv!=null?u.ltv:0},
+    {key:'status',label:'Status',type:'select',options:['active','pending'],value:u.status||'active'},
+  ],()=>{
+    const rec={name:fval('name'),email:fval('email'),phone:fval('phone'),city:fval('city'),bookings:+fval('bookings')||0,ltv:+fval('ltv')||0,status:fval('status')};
+    if(!rec.name){toast('Name is required','danger');return;}
+    if(id){Object.assign(u,rec);toast('Customer updated','success');}
+    else{rec.id=uid('U');DB.customers.unshift(rec);toast('Customer added','success');}
+    save();closeModal();renderAll();
+  });
+}
+/* ---- CRUD: OFFER ---- */
+function openOffer(id){
+  const o=id?DB.offers.find(x=>x.id===id):{};
+  openModal(id?'Edit code':'New promo code',[
+    {key:'code',label:'Code',value:o.code,ph:'NOVUS10'},
+    {key:'discount',label:'Discount',value:o.discount,ph:'10% or ₹500'},
+    {key:'desc',label:'Description',value:o.desc,full:true},
+    {key:'redeemed',label:'Redemptions',type:'number',value:o.redeemed!=null?o.redeemed:0},
+    {key:'till',label:'Valid till',type:'date',value:o.till},
+    {key:'status',label:'Status',type:'select',options:['active','expired'],value:o.status||'active'},
+  ],()=>{
+    const rec={code:fval('code').toUpperCase(),discount:fval('discount'),desc:fval('desc'),redeemed:+fval('redeemed')||0,till:fval('till'),status:fval('status')};
+    if(!rec.code){toast('Code is required','danger');return;}
+    if(id){Object.assign(o,rec);toast('Code updated','success');}
+    else{rec.id=uid('O');DB.offers.unshift(rec);toast('Code created','success');}
+    save();closeModal();renderAll();
+  });
+}
+/* ---- DELETE ---- */
+function del(coll,id,label){
+  if(!confirm(label+' will be permanently deleted. Continue?'))return;
+  DB[coll]=DB[coll].filter(x=>x.id!==id);
+  save();renderAll();toast(label+' deleted','danger');
+}
+
+/* ---- add buttons ---- */
+$('#addCar').addEventListener('click',()=>openCar());
+$('#addBooking').addEventListener('click',()=>openBooking());
+$('#addCust').addEventListener('click',()=>openCust());
+$('#addOffer').addEventListener('click',()=>openOffer());
+$('#bookFilter').addEventListener('change',renderBookings);
+$('#fleetFilter').addEventListener('change',renderFleet);
+
+/* ---- global search ---- */
+$('#globalSearch').addEventListener('input',e=>{
+  const q=e.target.value.toLowerCase().trim();
+  const active=$('.view.active').id.replace('view-','');
+  if(!['bookings','fleet','customers','offers'].includes(active))return;
+  $$('#view-'+active+' tbody tr').forEach(tr=>{
+    tr.style.display=tr.textContent.toLowerCase().includes(q)?'':'none';
+  });
+});
+
+/* ---- settings data tools ---- */
+function exportData(){
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='novuslease-data.json';a.click();
+  toast('Data exported','success');
+}
+function resetData(){
+  if(!confirm('Reset all demo data to defaults? Your changes will be lost.'))return;
+  DB=JSON.parse(JSON.stringify(DEFAULTS));save();renderAll();toast('Demo data reset','info');
+}
+
+/* ---- render all ---- */
+function renderAll(){ renderDashboard();renderBookings();renderFleet();renderCustomers();renderOffers(); }
+</script>
+</body>
+</html>
