@@ -36,7 +36,7 @@ export default function Header() {
             <a href="#faq">FAQ</a>
           </div>
           <div className="nav-cta">
-            <a className="btn btn-ghost" href="#">
+            <a className="btn btn-ghost" href="/login">
               Login / Signup
             </a>
             <a className="btn btn-dark" href="#book">
