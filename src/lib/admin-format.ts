@@ -86,3 +86,13 @@ export function promoPill(isActive: boolean, endsAt: Date | string | null): stri
 export function monthLabel(d: Date): string {
   return d.toLocaleDateString("en-IN", { month: "short" });
 }
+
+// "HATCHBACK" → "Hatchback" (the reference design shows Title-case categories/fuels).
+export function titleCase(s: string | null | undefined): string {
+  if (!s) return "—";
+  return s
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}

@@ -5,8 +5,8 @@ import {
   initials,
   inr,
   inrShort,
-  fmtDate,
   bookingPill,
+  titleCase,
 } from "@/lib/admin-format";
 import type { StatsData } from "../admin-types";
 
@@ -16,8 +16,6 @@ const STATUS_COLORS: [string, string][] = [
   ["maintenance", "var(--amber)"],
   ["retired", "var(--red)"],
 ];
-
-const RENDERED_AT = new Date().toISOString();
 
 export default function DashboardView() {
   const [data, setData] = useState<StatsData | null>(null);
@@ -93,7 +91,7 @@ export default function DashboardView() {
           <div className="panel-head">
             <div>
               <h3>Revenue — last 7 months</h3>
-              <div className="sub">Monthly gross booking value (₹)</div>
+              <div className="sub">Monthly gross booking value (₹ lakh)</div>
             </div>
           </div>
           <div className="panel-body">
@@ -139,7 +137,9 @@ export default function DashboardView() {
                 <div>
                   <div className="amt">{inrShort(b.amount)}</div>
                   <div style={{ textAlign: "right" }}>
-                    <span className={`pill ${bookingPill(b.status)}`}>{b.status.toLowerCase()}</span>
+                    <span className={`pill ${bookingPill(b.status)}`}>
+                      {bookingPill(b.status)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -219,7 +219,7 @@ export default function DashboardView() {
                 <div className="txt">
                   <div className="t">{c.name}</div>
                   <div className="s">
-                    {c.category.toLowerCase()} · {inr(c.lease)}
+                    {titleCase(c.category)} · {inr(c.lease)}
                     /mo
                   </div>
                 </div>
@@ -234,9 +234,6 @@ export default function DashboardView() {
           </div>
         </div>
       </div>
-      <p className="sub" style={{ fontSize: "0.78rem", color: "var(--muted)" }}>
-        Last refresh · {fmtDate(RENDERED_AT)}
-      </p>
     </div>
   );
 }

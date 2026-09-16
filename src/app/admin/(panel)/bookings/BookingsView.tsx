@@ -5,7 +5,6 @@ import AdminModal from "../AdminModal";
 import { useAdminSearch } from "../useAdminSearch";
 import {
   bookingPill,
-  fmtDate,
   initials,
   inr,
   toDateInput,
@@ -243,24 +242,18 @@ export default function BookingsView() {
                   <td>
                     <div className="car-cell">
                       <div className="cust-av">{initials(b.user.name)}</div>
-                      <div>
-                        <div className="cell-main">{b.user.name}</div>
-                        <div className="cell-sub">{b.city.name}</div>
-                      </div>
+                      <div>{b.user.name}</div>
                     </div>
                   </td>
+                  <td>{b.car.name}</td>
                   <td>
-                    <div className="cell-main">{b.car.name}</div>
-                    <div className="cell-sub">{b.bookingType.toLowerCase()}</div>
-                  </td>
-                  <td>
-                    <div className="cell-main">{fmtDate(b.startDate)}</div>
-                    <div className="cell-sub">to {fmtDate(b.endDate)}</div>
+                    <div className="cell-main">{toDateInput(b.startDate)}</div>
+                    <div className="cell-sub">to {toDateInput(b.endDate)}</div>
                   </td>
                   <td className="cell-main">{inr(b.totalAmount)}</td>
                   <td>
                     <span className={`pill ${bookingPill(b.status)}`}>
-                      {b.status.toLowerCase()}
+                      {bookingPill(b.status)}
                     </span>
                   </td>
                   <td>

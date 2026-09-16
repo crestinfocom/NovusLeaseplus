@@ -271,6 +271,7 @@ async function main() {
   const carsData = [
     {
       slug: "maruti-swift",
+      regNo: "KA01AB1234",
       name: "Maruti Swift",
       brand: "Maruti Suzuki",
       category: "HATCHBACK",
@@ -286,6 +287,7 @@ async function main() {
     },
     {
       slug: "hyundai-creta",
+      regNo: "KA05CD5678",
       name: "Hyundai Creta",
       brand: "Hyundai",
       category: "SUV",
@@ -301,6 +303,7 @@ async function main() {
     },
     {
       slug: "executive-sedan",
+      regNo: "KA02GH3456",
       name: "Executive Sedan",
       brand: "Tata",
       category: "SEDAN",
@@ -316,6 +319,7 @@ async function main() {
     },
     {
       slug: "toyota-innova-crysta",
+      regNo: "KA03EF9012",
       name: "Toyota Innova Crysta",
       brand: "Toyota",
       category: "MUV",
