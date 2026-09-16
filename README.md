@@ -91,7 +91,7 @@ The login page lists these under a **“Demo accounts”** panel for quick testi
 
 The admin portal lives at `/admin` (redirects to `/admin/dashboard`) with a separate login at `/admin/login`. It mirrors `Design/NovusLease-plus-admin.html` and is split into **Dashboard, Bookings, Fleet, Customers, Offers & Codes** and **Settings** views (all behind an ADMIN-role session cookie signed with `AUTH_SECRET`).
 
-Sign in with `admin@novuslease.in` / `Nova@admin1`.
+Sign in with `admin@novuslease.in` / `Nova@admin1`. The left sidebar is a **vertical** menu (Overview, Management, System) — a global `nav` reset is overridden in `admin.css` so it never renders horizontally.
 
 ### Auth API routes
 
@@ -162,9 +162,16 @@ tests/
 | `npm run prisma:generate` | Generate Prisma Client |
 | `npm run prisma:push` | Push schema to Neon (create tables) |
 | `npm run prisma:studio` | Browse data in Prisma Studio |
-| `npm run db:seed` | Insert demo cities, cars, lease params, promos & demo accounts |
+| `npm run db:seed` | Clean test records, then upsert demo cities, cars, promos & accounts (always syncs) |
 | `npm run test:e2e` | Run Playwright E2E tests (production build required) |
 | `npm run test:e2e:ui` | Open the Playwright UI runner |
+
+## Seed / data sync
+
+Running `npm run db:seed` is idempotent and always safe to re-run:
+
+1. **Cleans test records** — removes users created by E2E signup tests (`@example.com` / `@acme.in`) and their bookings; seeded demo accounts are preserved.
+2. **Upserts demo data** — users, cars, lease params, cities and promotions are all synced so descriptions stay current without duplication.
 
 ## Testing
 
@@ -172,12 +179,12 @@ E2E tests use **Playwright** against a production build (`npm run start`). Run o
 
 ```bash
 npm run prisma:push
-npm run db:seed     # creates the demo accounts used by tests/auth.spec.ts
+npm run db:seed     # cleans test records, then creates demo accounts used by tests
 npm run build
 npm run test:e2e
 ```
 
-- `tests/auth.spec.ts` — login/signup/forgot-password flows incl. the seeded demo accounts
+- `tests/auth.spec.ts` — login/signup/forgot-password flows incl. the seeded demo accounts (creates disposable `@example.com` / `@acme.in` accounts that `db:seed` cleans up next run)
 - `tests/admin.spec.ts` — admin console: unauthenticated redirect, ADMIN-only login, operations-blocked (403), navigation across all six views, seeded rows, sign-out
 - `tests/homepage.spec.ts` — homepage sections, calculator, reveal animations, mobile hamburger menu
 - `tests/ui.spec.ts` — renders every public page at desktop/tablet/mobile sizes, asserts no horizontal overflow, saves screenshots to `test-results/ui/`

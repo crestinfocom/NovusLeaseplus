@@ -217,6 +217,10 @@
 }
 .admin .sb-nav {
   flex: 1;
+  display: block;
+  height: auto;
+  align-items: unset;
+  justify-content: unset;
   padding: 16px 14px;
   overflow-y: auto;
 }
