@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 const updateSchema = z.object({
   name: z.string().min(1).max(120).optional(),
+  regNo: z.string().min(1).max(20).optional(),
   category: z.enum(["HATCHBACK", "SEDAN", "SUV", "MUV", "LUXURY", "ELECTRIC"]).optional(),
   fuelType: z.enum(["PETROL", "DIESEL", "ELECTRIC", "HYBRID", "CNG"]).optional(),
   transmission: z.enum(["MANUAL", "AUTOMATIC"]).optional(),

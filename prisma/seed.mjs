@@ -244,9 +244,29 @@ async function seedDemoBookings(users) {
   }
 }
 
+async function cleanTestRecords() {
+  // Remove users created by E2E signup tests (unique emails containing
+  // "@example.com" or "@acme.in" that are NOT seeded demo accounts).
+  const seededEmails = Object.keys(ACCOUNT_PASSWORDS);
+  const testUsers = await prisma.user.findMany({
+    where: {
+      email: { notIn: seededEmails },
+      OR: [{ email: { contains: "@example.com" } }, { email: { contains: "@acme.in" } }],
+    },
+    select: { id: true },
+  });
+  if (testUsers.length > 0) {
+    const ids = testUsers.map((u) => u.id);
+    await prisma.booking.deleteMany({ where: { userId: { in: ids } } });
+    await prisma.user.deleteMany({ where: { id: { in: ids } } });
+    console.log(`✓ cleaned ${ids.length} test user(s) and their bookings`);
+  }
+}
+
 async function main() {
   console.log("Seeding NovusLease+ …");
 
+  await cleanTestRecords();
   const users = await seedDemoUsers();
 
   // Cities
@@ -271,6 +291,7 @@ async function main() {
   const carsData = [
     {
       slug: "maruti-swift",
+      regNo: "KA01AB1234",
       name: "Maruti Swift",
       brand: "Maruti Suzuki",
       category: "HATCHBACK",
@@ -286,6 +307,7 @@ async function main() {
     },
     {
       slug: "hyundai-creta",
+      regNo: "KA05CD5678",
       name: "Hyundai Creta",
       brand: "Hyundai",
       category: "SUV",
@@ -301,6 +323,7 @@ async function main() {
     },
     {
       slug: "executive-sedan",
+      regNo: "KA02GH3456",
       name: "Executive Sedan",
       brand: "Tata",
       category: "SEDAN",
@@ -316,6 +339,7 @@ async function main() {
     },
     {
       slug: "toyota-innova-crysta",
+      regNo: "KA03EF9012",
       name: "Toyota Innova Crysta",
       brand: "Toyota",
       category: "MUV",
@@ -346,15 +370,21 @@ async function main() {
   }
 
   // Promotions from the homepage + a festive offer for the admin Offers view
-  await prisma.promotion.createMany({
-    data: [
-      { code: "NOVUS10", title: "1–3 rental days", description: "10% off quick weekend escapes", discountPct: 10, minDays: 1 },
-      { code: "NOVUS15", title: "3–5 rental days", description: "15% off road trips", discountPct: 15, minDays: 3 },
-      { code: "NOVUS20", title: "5+ days & subscriptions", description: "20% off extended drives", discountPct: 20, minDays: 5 },
-      { code: "FESTIVE25", title: "Diwali special", description: "Flat 25% off flagship vehicles", discountPct: 25, minDays: 2, endsAt: daysFromNow(30) },
-    ],
-    skipDuplicates: true,
-  });
+  // Always sync: upsert each promotion so titles/descriptions stay current.
+  const promos = [
+    { code: "NOVUS10", title: "1–3 rental days", description: "10% off quick weekend escapes", discountPct: 10, minDays: 1 },
+    { code: "NOVUS15", title: "3–5 rental days", description: "15% off road trips", discountPct: 15, minDays: 3 },
+    { code: "NOVUS20", title: "5+ days & subscriptions", description: "20% off extended drives", discountPct: 20, minDays: 5 },
+    { code: "FESTIVE25", title: "Diwali special", description: "Flat 25% off flagship vehicles", discountPct: 25, minDays: 2, endsAt: daysFromNow(30) },
+  ];
+  for (const p of promos) {
+    const { code, ...rest } = p;
+    await prisma.promotion.upsert({
+      where: { code },
+      update: rest,
+      create: { code, ...rest },
+    });
+  }
   console.log("✓ promotions NOVUS10 / NOVUS15 / NOVUS20 / FESTIVE25");
 
   await seedDemoBookings(users);

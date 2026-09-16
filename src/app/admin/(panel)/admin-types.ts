@@ -46,6 +46,7 @@ export type BookingRow = {
 export type CarRow = {
   id: string;
   slug: string;
+  regNo: string | null;
   name: string;
   brand: string;
   category: string;

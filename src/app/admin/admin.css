@@ -217,6 +217,10 @@
 }
 .admin .sb-nav {
   flex: 1;
+  display: block;
+  height: auto;
+  align-items: unset;
+  justify-content: unset;
   padding: 16px 14px;
   overflow-y: auto;
 }
@@ -683,7 +687,6 @@
   font-weight: 700;
   padding: 4px 11px;
   border-radius: 100px;
-  text-transform: capitalize;
 }
 .admin .pill::before {
   content: "";
@@ -970,7 +973,7 @@
 }
 
 .admin .empty {
-  padding: 40px;
+  padding: 50px;
   text-align: center;
   color: var(--muted);
   font-size: 0.9rem;

@@ -36,6 +36,7 @@ function deriveStatus(
 const carSchema = z.object({
   name: z.string().min(1).max(120),
   brand: z.string().min(1).max(60).optional(),
+  regNo: z.string().min(1).max(20).optional(),
   category: z.enum(["HATCHBACK", "SEDAN", "SUV", "MUV", "LUXURY", "ELECTRIC"]),
   fuelType: z.enum(["PETROL", "DIESEL", "ELECTRIC", "HYBRID", "CNG"]),
   transmission: z.enum(["MANUAL", "AUTOMATIC"]),
@@ -55,6 +56,7 @@ export async function GET() {
     select: {
       id: true,
       slug: true,
+      regNo: true,
       name: true,
       brand: true,
       category: true,
@@ -80,6 +82,7 @@ export async function GET() {
     return {
       id: car.id,
       slug: car.slug,
+      regNo: car.regNo,
       name: car.name,
       brand: car.brand,
       category: car.category,
@@ -124,6 +127,7 @@ export async function POST(request: Request) {
       slug,
       name: data.name,
       brand: data.brand ?? "NovusLease",
+      regNo: data.regNo ?? null,
       category: data.category,
       fuelType: data.fuelType,
       transmission: data.transmission,

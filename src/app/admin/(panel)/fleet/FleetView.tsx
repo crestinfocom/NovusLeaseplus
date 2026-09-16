@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import AdminModal from "../AdminModal";
 import { useAdminSearch } from "../useAdminSearch";
-import { inr, carPill } from "@/lib/admin-format";
+import { inr, carPill, titleCase } from "@/lib/admin-format";
 import { pushToast } from "@/lib/toast-bus";
 import type { CarRow } from "../admin-types";
 
@@ -191,7 +191,7 @@ export default function FleetView() {
             <thead>
               <tr>
                 <th>Vehicle</th>
-                <th>Category</th>
+                <th>Reg. no.</th>
                 <th>Type</th>
                 <th>Monthly lease</th>
                 <th>Utilisation</th>
@@ -204,7 +204,7 @@ export default function FleetView() {
                 <tr>
                   <td colSpan={7}>
                     <div className="empty">
-                      <span className="ic">🚗</span>
+                      <span className="ic">🗂</span>
                       {loading
                         ? "Loading fleet…"
                         : "No vehicles match this filter"}
@@ -219,17 +219,17 @@ export default function FleetView() {
                       <div className="car-thumb">🚗</div>
                       <div>
                         <div className="cell-main">{c.name}</div>
-                        <div className="cell-sub">
-                          {c.fuelType.toLowerCase()} · {c.transmission.toLowerCase()} ·{" "}
-                          {c.seats} seater
-                        </div>
+                        <div className="cell-sub">{titleCase(c.fuelType)}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="cell-main" style={{ fontFamily: "monospace", fontSize: "0.82rem" }}>
-                    {c.slug}
+                  <td
+                    className="cell-main"
+                    style={{ fontFamily: "monospace", fontSize: "0.82rem" }}
+                  >
+                    {c.regNo ?? "—"}
                   </td>
-                  <td>{c.category}</td>
+                  <td>{titleCase(c.category)}</td>
                   <td className="cell-main">
                     {inr(c.lease)}
                     <span className="cell-sub">/mo</span>

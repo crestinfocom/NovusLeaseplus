@@ -61,6 +61,7 @@ enum AccountType {
 model Car {
   id            String          @id @default(cuid())
   slug          String          @unique
+  regNo         String?         @unique
   name          String
   brand         String
   category      CarCategory     @default(HATCHBACK)

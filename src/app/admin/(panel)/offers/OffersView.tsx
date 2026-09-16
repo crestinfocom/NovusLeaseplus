@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import AdminModal from "../AdminModal";
 import { useAdminSearch } from "../useAdminSearch";
-import { fmtDate, promoPill, toDateInput } from "@/lib/admin-format";
+import { promoPill, toDateInput } from "@/lib/admin-format";
 import { pushToast } from "@/lib/toast-bus";
 import type { OfferRow } from "../admin-types";
 
@@ -190,10 +190,10 @@ export default function OffersView() {
                   </td>
                   <td className="cell-main">{o.discount}</td>
                   <td className="cell-main">{o.redeemed}</td>
-                  <td>{fmtDate(o.till)}</td>
+                  <td>{o.till ? toDateInput(o.till) : "—"}</td>
                   <td>
                     <span className={`pill ${promoPill(o.isActive, o.till)}`}>
-                      {promoPill(o.isActive, o.till)}
+                      {promoPill(o.isActive, o.till) === "retired" ? "expired" : "active"}
                     </span>
                   </td>
                   <td>

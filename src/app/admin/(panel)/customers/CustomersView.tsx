@@ -182,7 +182,7 @@ export default function CustomersView() {
                   <td className="cell-main">{inr(c.ltv)}</td>
                   <td>
                     <span className={`pill ${kycPill(c.kycStatus)}`}>
-                      {c.kycStatus.toLowerCase()}
+                      {c.kycStatus === "REJECTED" ? "rejected" : kycPill(c.kycStatus)}
                     </span>
                   </td>
                   <td>

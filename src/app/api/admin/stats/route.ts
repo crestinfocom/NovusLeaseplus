@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin-api";
+import { inrShort } from "@/lib/admin-format";
 
 export const dynamic = "force-dynamic";
 
@@ -180,7 +181,7 @@ export async function GET() {
       ic: "g",
       emoji: "💰",
       lbl: "Total revenue",
-      num: revenue,
+      num: inrShort(revenue),
       chg:
         (revDelta >= 0 ? "▲ " : "▼ ") +
         Math.abs(revDelta).toFixed(1) +
