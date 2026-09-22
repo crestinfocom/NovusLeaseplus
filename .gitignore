@@ -43,6 +43,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# local dev runtime state (detached process pids + logs)
+local-dev/.run/
+local-dev/logs/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

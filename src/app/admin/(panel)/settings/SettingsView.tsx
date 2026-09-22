@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { pushToast } from "@/lib/toast-bus";
+
+type SyncStatus = {
+  enabled: boolean;
+  lastSyncedAt: string | null;
+  cooldownRemainingMs: number;
+};
 
 export default function SettingsView() {
   const [profile, setProfile] = useState({
@@ -10,6 +16,39 @@ export default function SettingsView() {
     phone: "+91 80 4567 8900",
     address: "Prestige Tower, MG Road, Bengaluru 560001",
   });
+  const [sync, setSync] = useState<SyncStatus | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/admin/sync-local")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.ok) setSync(d);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function syncFromNeon() {
+    if (syncing || !sync?.enabled) return;
+    setSyncing(true);
+    try {
+      const r = await fetch("/api/admin/sync-local", { method: "POST" });
+      const d = await r.json();
+      if (!r.ok || !d.ok) {
+        pushToast(d.error || "Sync failed", "danger");
+        return;
+      }
+      pushToast(
+        `Synced ${d.rows} rows from Neon in ${(d.durationMs / 1000).toFixed(1)}s`,
+        "success"
+      );
+      setSync({ enabled: true, lastSyncedAt: d.syncedAt, cooldownRemainingMs: d.cooldownRemainingMs });
+    } catch {
+      pushToast("Sync failed", "danger");
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   async function exportData() {
     try {
@@ -165,6 +204,39 @@ export default function SettingsView() {
           </div>
         </div>
       </div>
+
+      {sync?.enabled && (
+        <div className="panel" style={{ gridColumn: "1 / -1" }}>
+          <div className="panel-head">
+            <h3>Local database sync (Neon → Docker)</h3>
+          </div>
+          <div className="panel-body">
+            <div className="list-item">
+              <div className="txt">
+                <div className="t">Pull the latest data from Neon</div>
+                <div className="s">
+                  {sync.lastSyncedAt
+                    ? `Last synced ${new Date(sync.lastSyncedAt).toLocaleString()}`
+                    : "Never synced yet"}{" "}
+                  — replaces the local Docker DB contents with the full Neon
+                  dataset. One-way and read-only on Neon; rate-limited to keep
+                  Neon usage low.
+                </div>
+              </div>
+              <div className="pref-row">
+                <button
+                  className="btn btn-gold btn-sm"
+                  disabled={syncing || sync.cooldownRemainingMs > 0}
+                  data-testid="sync-from-neon"
+                  onClick={syncFromNeon}
+                >
+                  {syncing ? "Syncing…" : "Sync from Neon"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
