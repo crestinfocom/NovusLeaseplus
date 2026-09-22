@@ -1,0 +1,40 @@
+# ═══════════════════════════════════════════════════════════════════
+# NovusLease+ — local development database (Docker)
+# ═══════════════════════════════════════════════════════════════════
+# Start:   npm run start:local        (up + schema push + seed + dev)
+# Or:      npm run db:up              (just the database)
+# Stop:    npm run db:down            (data persists in the volume)
+# Wipe:    npm run db:down -v         (delete the volume too)
+#
+# Host port is 5434 — 5432/5433 may be taken by other local projects.
+# Must match DATABASE_URL_LOCAL in .env.local / .env.example.
+# ═══════════════════════════════════════════════════════════════════
+
+name: novuslease-local
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: novuslease-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: novuslease
+      POSTGRES_PASSWORD: novuslease
+      POSTGRES_DB: novuslease
+    ports:
+      - "5434:5432"
+    volumes:
+      # Named volume → data survives `docker compose down` and container
+      # rebuilds. Only `docker compose down -v` (or the Reset script)
+      # removes it.
+      - novus_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U novuslease -d novuslease"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  novus_pgdata:
+    name: novuslease_pgdata

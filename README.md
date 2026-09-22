@@ -58,8 +58,56 @@ DATABASE_URL="postgresql://USER:PASSWORD@EP-XXXX.REGION.aws.neon.tech/novuslease
 Verify the DB connection at runtime:
 
 ```text
-GET http://localhost:3000/api/health   → { "status": "ok", "database": "connected" }
+GET http://localhost:3000/api/health   → { "status": "ok", "database": "connected", "mode": "local-docker" | "neon" }
 ```
+
+## Local development with Docker (recommended)
+
+Development and testing can run **entirely against a local Docker Postgres**
+— zero Neon calls in the normal workflow. Full guide: [`local-dev/README.md`](./local-dev/README.md).
+
+```bash
+# One command: start Docker DB → prisma db push → seed if empty → next dev
+npm run start:local        # alias: npm run local
+
+# Same stack, but everything runs DETACHED in the background (no terminal held
+# open — logs to local-dev/logs/, pids in local-dev/.run/). Recommended when an
+# agent/CI runs the app, and for E2E:
+npm run dev:detached                 # background next dev on :3000
+npm run test:e2e:local               # build + background server + headless E2E
+npm run test:e2e:local:headed        # same, with a visible browser + DevTools
+npm run dev:status                   # pid + log tail for dev/server/tests
+node local-dev/watch.mjs tests       # wait for the E2E run, then print result
+npm run dev:stop                     # kill everything (-- --db stops Docker too)
+```
+
+The switch lives in **`.env.local`**:
+
+```env
+USE_LOCAL_DB="true"     # true → app, Prisma CLI, seed & Playwright all use Docker
+DATABASE_URL_LOCAL="postgresql://novuslease:novuslease@localhost:5434/novuslease?sslmode=disable"
+```
+
+- **Persistence** — data is stored in the named volume `novuslease_pgdata`, so it
+  survives restarts (`npm run db:down` keeps it; `npm run db:reset` wipes it).
+- **No Neon dependency** — local mode never calls Neon; `start:local`, seeding,
+  admin CRUD and the Playwright suites all run against Docker. The only
+  Neon-touching feature is the manual sync button.
+- **Neon stays the source of truth** — `DATABASE_URL` still points at Neon and is
+  only used when `USE_LOCAL_DB` is false, plus as the source for the sync below.
+- **Sync button** — in local mode, `/admin → Settings` shows *“Sync from Neon”*:
+  it pulls the full Neon dataset into Docker (one-way, read-only on Neon) with
+  rate-limiting, a single short-lived Neon client, and 11 batched reads
+  (one per table) to keep Neon usage minimal.
+
+| Script | Purpose |
+| --- | --- |
+| `npm run start:local` | Docker DB up → schema push → conditional seed → `next dev` |
+| `npm run db:up` / `db:down` | Start / stop the database (data kept) |
+| `npm run db:reset` | Stop and delete the volume (fresh DB) |
+| `npm run db:push:local` | Prisma `db push` against Docker |
+| `npm run db:seed:local` | Seed demo data into Docker |
+| `npm run db:studio:local` | Prisma Studio against Docker |
 
 ## Auth & accounts
 
@@ -107,6 +155,12 @@ Passwords are hashed with **scrypt** (`src/lib/password.ts`) — no extra depend
 
 ```
 Design/                       # original design reference (HTML)
+local-dev/
+  docker-compose.yml          # local Postgres 16 + named volume novuslease_pgdata
+  start-local.mjs             # npm run start:local orchestrator (docker → push → seed → dev)
+  with-local-db.mjs           # run any command against the Docker DB
+  lib.mjs                     # env loading (.env.local wins), port wait, process runner
+  README.md                   # local dev + Neon sync guide
 prisma/
   schema.prisma               # database schema (User, Car, Booking, Payment, Promotion…)
   seed.mjs                    # demo seed: cities, cars, lease params, promos, demo accounts
@@ -129,13 +183,14 @@ src/
       (panel)/                # guarded shell: sidebar + topbar + global search + toasts
         dashboard/ bookings/ fleet/ customers/ offers/ settings/   # the six views
     api/admin/                # admin APIs (login/logout/session/stats/bookings/cars/
-                              #   customers/promotions/meta) — all behind an ADMIN session
+                              #   customers/promotions/meta/sync-local) — behind an ADMIN session
   components/                 # one component per homepage section
     Header (mobile hamburger menu), Hero, BookingWidget, FleetLogos, Usp,
     Offers, Models, LeaseCalculator, HowItWorks, Showcase, WhyUs,
     Testimonial, Faq, CtaFinal, Footer, TopBar, Reveal, AuthShell
   lib/
-    prisma.ts                 # singleton PrismaClient (driver adapter + Neon)
+    prisma.ts                 # singleton PrismaClient (Docker or Neon via USE_LOCAL_DB)
+    local-sync.ts             # one-way Neon → Docker sync (admin button, rate-limited)
     calc-bus.ts               # event bus: "Lease this car" → calculator prefill
     password.ts               # scrypt password hashing / verification
     account-type.ts           # client ⇄ Prisma account-type mapping
@@ -155,12 +210,19 @@ tests/
 
 | Script | Purpose |
 | --- | --- |
-| `npm run dev` | Start the dev server |
+| `npm run dev` | Start the dev server (uses Docker when `USE_LOCAL_DB=true`) |
+| `npm run start:local` | Local Docker DB up → schema push → conditional seed → `next dev` |
+| `npm run dev:detached` | Same, but `next dev` runs in the background (log + pid tracked) |
+| `npm run dev:status` / `dev:stop` | Inspect / kill the detached dev & test processes |
+| `npm run test:e2e:local[:headed]` | Playwright suite vs detached local server (headless or headed with DevTools) |
+| `npm run tests:status` / `tests:stop` | Status / kill of the detached E2E run |
+| `npm run db:up` / `db:down` / `db:reset` | Start / stop / wipe the local Docker database |
+| `npm run db:push:local` / `db:seed:local` / `db:studio:local` | Prisma commands against Docker |
 | `npm run build` | Production build |
 | `npm run start` | Serve the production build |
 | `npm run lint` | ESLint |
 | `npm run prisma:generate` | Generate Prisma Client |
-| `npm run prisma:push` | Push schema to Neon (create tables) |
+| `npm run prisma:push` | Push schema to the configured DB (Docker if `USE_LOCAL_DB=true`, else Neon) |
 | `npm run prisma:studio` | Browse data in Prisma Studio |
 | `npm run db:seed` | Clean test records, then upsert demo cities, cars, promos & accounts (always syncs) |
 | `npm run test:e2e` | Run Playwright E2E tests (production build required) |
@@ -175,13 +237,17 @@ Running `npm run db:seed` is idempotent and always safe to re-run:
 
 ## Testing
 
-E2E tests use **Playwright** against a production build (`npm run start`). Run once after a fresh database:
+E2E tests use **Playwright** against a production build (`npm run start`). With
+`USE_LOCAL_DB=true` in `.env.local` the test server and all tests run against
+the local Docker DB — Neon is not required (even if its quota is exhausted).
+Run once after a fresh database:
 
 ```bash
-npm run prisma:push
-npm run db:seed     # cleans test records, then creates demo accounts used by tests
+npm run prisma:push     # reaches Docker when USE_LOCAL_DB=true
+npm run db:seed         # cleans test records, then creates demo accounts used by tests
 npm run build
-npm run test:e2e
+npm run test:e2e        # headless
+npx playwright test --headed   # opened Chromium window; F12 opens DevTools
 ```
 
 - `tests/auth.spec.ts` — login/signup/forgot-password flows incl. the seeded demo accounts (creates disposable `@example.com` / `@acme.in` accounts that `db:seed` cleans up next run)

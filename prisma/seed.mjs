@@ -1,21 +1,39 @@
-// NovusLease+ seed script (Neon PostgreSQL)
-// Run with: npm run db:seed
+// NovusLease+ seed script (local Docker or Neon PostgreSQL)
+// Run with: npm run db:seed  ·  or against Docker: npm run db:seed:local
 import "dotenv/config";
+import { config as loadDotenv } from "dotenv";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { randomBytes, scryptSync } from "node:crypto";
 
-const connectionString = process.env.DATABASE_URL;
+// Same precedence as Next.js: .env.local wins over .env.
+loadDotenv({ path: ".env.local", override: true });
+
+const useLocal =
+  process.env.USE_LOCAL_DB === "true" || process.env.USE_LOCAL_DB === "1";
+const localUrl =
+  process.env.DATABASE_URL_LOCAL ||
+  "postgresql://novuslease:novuslease@localhost:5434/novuslease?sslmode=disable";
+const connectionString = useLocal ? localUrl : process.env.DATABASE_URL;
+const target = useLocal ? "local Docker DB" : "Neon";
 
 if (!connectionString || connectionString.includes("USER:PASSWORD")) {
-  console.error(
-    "✗ DATABASE_URL is not configured. Add your Neon connection string to .env before seeding."
-  );
-  console.error(
-    "  Copy .env.example → .env and set DATABASE_URL, then retry."
-  );
+  if (useLocal) {
+    console.error(
+      "✗ Local mode is on but DATABASE_URL_LOCAL is not usable. Is local-dev/docker-compose.yml up? (npm run db:up)"
+    );
+  } else {
+    console.error(
+      "✗ DATABASE_URL is not configured. Add your Neon connection string to .env before seeding."
+    );
+    console.error(
+      "  Copy .env.example → .env and set DATABASE_URL, then retry.",
+    );
+  }
   process.exit(1);
 }
+
+console.log(`→ Seeding ${target}: ${connectionString.replace(/:[^:@/]+@/, ":***@")}`);
 
 const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
