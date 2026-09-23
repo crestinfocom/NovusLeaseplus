@@ -6,17 +6,17 @@ export default function Footer() {
   return (
     <footer className="footer">
       <div className="wrap">
-        <div className="f-grid">
-          <div className="f-brand">
-            <Link href="/" className="f-logo">
+        <div className="foot-grid">
+          <div className="foot-col">
+            <Link href="/" className="brand">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/logo-footer.png" alt="NovusLease+" height={34} />
+              <img src="/images/logo-footer.png" alt="NovusLease+" />
             </Link>
             <p>
-              Subscriptions, leases and launch-day cars. Premium self-drive,
-              minus the showroom markup.
+              Premium self-drive car rentals and subscriptions across India.
+              Elegant service, transparent pricing, freedom on every trip.
             </p>
-            <div className="social">
+            <div className="foot-social">
               <a href="#" aria-label="Instagram">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="3" width="18" height="18" rx="5" />
@@ -25,8 +25,13 @@ export default function Footer() {
                 </svg>
               </a>
               <a href="#" aria-label="X">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor">
                   <path d="M4 4l16 16M20 4L4 20" />
+                </svg>
+              </a>
+              <a href="#" aria-label="LinkedIn">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor">
+                  <path d="M6.5 8.8v9.7M3 8.8v9.7M6.5 5.7a1.6 1.6 0 11-3.2 0 1.6 1.6 0 013.2 0zM12 18.5v-6a2.7 2.7 0 015.4 0v6M12 18.5V8.8" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
                 </svg>
               </a>
               <a href="#" aria-label="YouTube">
@@ -37,52 +42,34 @@ export default function Footer() {
               </a>
             </div>
           </div>
-          <div className="f-col">
-            <h4>Company</h4>
-            <Link href="/#plans">Our plans</Link>
-            <Link href="/fleet">The fleet</Link>
-            <Link href="/compare">Lease vs buy</Link>
-            <Link href="/#how">How it works</Link>
-          </div>
-          <div className="f-col">
-            <h4>Quick links</h4>
-            <Link href="/fleet">Browse fleet</Link>
+          <div className="foot-col">
+            <h5>Explore</h5>
+            <Link href="/#plans">Plans</Link>
+            <Link href="/fleet">Fleet</Link>
             <Link href="/compare">Lease vs Buy</Link>
-            <Link href="/quote">Get a quote</Link>
-            <Link href="/#plans">Plans &amp; pricing</Link>
+            <Link href="/quote">Get a Quote</Link>
           </div>
-          <div className="f-col">
-            <h4>Support</h4>
+          <div className="foot-col">
+            <h5>Company</h5>
+            <Link href="/#plans">About us</Link>
+            <Link href="/quote">Contact us</Link>
+            <Link href="/fleet">Become a partner</Link>
+            <Link href="/quote">Refer &amp; earn</Link>
+          </div>
+          <div className="foot-col">
+            <h5>Support</h5>
+            <Link href="/#faq">FAQs</Link>
+            <Link href="/#plans">Terms of service</Link>
+            <Link href="/#how">Privacy policy</Link>
             <Link href="/#faq">Help centre</Link>
-            <Link href="/quote">Build a quote</Link>
-            <Link href="/compare">Compare plans</Link>
-            <Link href="/fleet">Explore cars</Link>
-          </div>
-          <div className="f-col">
-            <h4>Newsletter</h4>
-            <p>Drop-in deals, no spam.</p>
-            <form
-              className="f-news"
-              onSubmit={(e) => {
-                e.preventDefault();
-                e.currentTarget.reset();
-              }}
-            >
-              <input type="email" placeholder="you@email.com" required />
-              <button type="submit">→</button>
-            </form>
           </div>
         </div>
-        <div className="f-bottom">
-          <div className="badges">
-            <span>🔒 Secure checkout</span>
-            <span>⚡ 15-min approval*</span>
-            <span>⚙️ 24/7 Roadside Assist</span>
-          </div>
-          <div className="copy">
-            © {new Date().getFullYear()} NovusLease+ · Self-drive car
-            subscriptions made smart.
-          </div>
+        <div className="foot-bottom">
+          <span>
+            © {new Date().getFullYear()} NovusLease+ Mobility Pvt. Ltd. · 16
+            cities across India
+          </span>
+          <span>Best-price guarantee · Prices inclusive of taxes</span>
         </div>
       </div>
     </footer>
