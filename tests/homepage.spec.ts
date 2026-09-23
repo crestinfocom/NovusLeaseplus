@@ -1,14 +1,14 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("NovusLease+ homepage", () => {
+test.describe("NovusLease+ homepage (marketing)", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
     await page.evaluate(() => window.scrollTo(0, 0));
   });
 
   async function revealAll(page: import("@playwright/test").Page) {
-    await page.waitForTimeout(600);
     await page.evaluate(async () => {
+      document.documentElement.style.scrollBehavior = "auto";
       const innerH = window.innerHeight;
       let h = document.documentElement.scrollHeight - innerH;
       let guard = 0;
@@ -28,115 +28,97 @@ test.describe("NovusLease+ homepage", () => {
     });
   }
 
-  test("critical sections are visible (reveal animation fires)", async ({ page }) => {
+  test("critical sections are visible", async ({ page }) => {
     const selectors = [
       "#hdr",
-      "#top.hero",
+      ".topbar",
+      ".hero",
       ".usp-bg",
-      "#offers",
+      "#plans",
       "#models",
-      "#calc",
       "#how",
-      "#why",
       "#faq",
-      "#footer",
+      ".footer",
     ];
     for (const sel of selectors) {
       await expect(page.locator(sel).first()).toBeVisible();
     }
   });
 
-  test("every .reveal wrapper receives .in class after full scroll", async ({ page }) => {
+  test("every .reveal receives .in after full scroll", async ({ page }) => {
     const revealCount = await page.locator(".reveal").count();
-    expect(revealCount).toBeGreaterThan(30);
+    expect(revealCount).toBeGreaterThan(12);
     await revealAll(page);
     await page.waitForFunction(
       () => {
         const els = Array.from(document.querySelectorAll(".reveal"));
-        return els.length > 30 && els.every((el) => el.classList.contains("in"));
+        return els.length > 12 && els.every((el) => el.classList.contains("in"));
       },
       undefined,
       { timeout: 10_000 }
     );
-    const settled = await page
-      .locator(".reveal")
-      .evaluateAll((els) => els.every((el) => el.classList.contains("in")));
-    expect(settled).toBe(true);
   });
 
-  test("hero renders headline, eyebrow and booking CTA", async ({ page }) => {
+  test("hero renders headline, eyebrow and CTAs", async ({ page }) => {
     const hero = page.locator(".hero");
     await expect(hero).toContainText("Premium self-drive");
     await expect(hero).toContainText("effortlessly");
     await expect(hero.locator(".hero-actions .btn-gold")).toBeVisible();
-    await expect(hero.locator(".hero-actions .btn-gold")).toHaveText(/Book your car/);
+    await expect(hero.locator(".hero-actions .btn-gold")).toHaveText(/Get a quote/);
+    await expect(hero.locator(".hero-actions .btn-ghost")).toHaveText(/Explore the fleet/);
   });
 
-  test("booking widget toggles daily vs monthly", async ({ page }) => {
-    const daily = page.locator('button[data-mode="daily"]');
-    const monthly = page.locator('button[data-mode="monthly"]');
-    await expect(daily).toHaveClass(/active/);
-
-    await monthly.click();
-    await expect(monthly).toHaveClass(/active/);
-    await expect(daily).not.toHaveClass(/active/);
-    await expect(page.locator("[aria-label='Subscription duration']")).toBeVisible();
-
-    await daily.click();
-    await expect(daily).toHaveClass(/active/);
-  });
-
-  test("nav links point to existing sections and scroll works", async ({ page }) => {
-    const links = page.locator("header .navlinks a");
-    const count = await links.count();
-    expect(count).toBeGreaterThanOrEqual(6);
-
-    for (const href of ["#offers", "#models", "#calc", "#how", "#why", "#faq"]) {
-      await expect(page.locator(href)).toBeVisible();
-    }
-  });
-
-  test("leasing a car from fleet prefills the calculator and shows chip", async ({
+  test("best-selling models render with quote, wishlist and compare actions", async ({
     page,
   }) => {
     await revealAll(page);
+    const cards = page.locator(".rail-model, .car-grid .model, #models .model");
+    const n = await cards.count();
+    expect(n).toBeGreaterThanOrEqual(5);
+    for (const pick of ["Maruti Swift", "Hyundai Creta", "Tata Nexon EV"]) {
+      await expect(page.locator(`.model[data-name="${pick}"]`)).toBeVisible();
+    }
+    const first = page.locator(".model").first();
+    await expect(first.locator(".lease-btn")).toHaveText(/Get a quote/);
+  });
 
+  test("nav links point to existing sections and pages", async ({ page }) => {
+    for (const href of ["#plans", "#models", "#how", "#faq"]) {
+      await expect(page.locator(href)).toBeVisible();
+    }
+    const nav = page.locator("header .navlinks a");
+    await expect(nav).toHaveCount(4);
+    await expect(nav.nth(1)).toHaveAttribute("href", "/fleet");
+    await expect(nav.nth(2)).toHaveAttribute("href", "/compare");
+    await expect(nav.nth(3)).toHaveAttribute("href", "/quote");
+  });
+
+  test("adding cars to compare shows tray and updates header badge", async ({
+    page,
+  }) => {
+    await revealAll(page);
     const swift = page.locator('.model[data-name="Maruti Swift"]');
     await expect(swift).toBeVisible();
-    await swift.locator(".lease-btn").click();
-
-    const chip = page.locator("#calcChip");
-    await expect(chip).toHaveClass(/show/);
-    await expect(chip).toContainText("Maruti Swift");
-
-    await expect(page.locator("#v_carPrice")).toHaveText("₹8.00 L");
-
-    await expect(page.locator("#reco")).toBeVisible();
+    await swift.locator(".icobtn.cmp").click();
+    await expect(page.locator(".icobtn.cmp", { hasText: "" }).first()).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    const tray = page.locator("#cmptray");
+    await expect(tray).toBeVisible();
+    await expect(tray).toContainText("Maruti Swift");
+    await expect(page.locator('header [data-testid="header-compare"] .cnt')).toHaveText("1");
   });
 
-  test("calculator sliders update computed values", async ({ page }) => {
+  test("wishlist heart saves a car and updates the header counter", async ({
+    page,
+  }) => {
     await revealAll(page);
-    const slider = page.locator("#carPrice");
-    await slider.evaluate(() => {
-      const el = document.getElementById("carPrice") as HTMLInputElement;
-      const setter = Object.getOwnPropertyDescriptor(
-        HTMLInputElement.prototype,
-        "value"
-      )?.set;
-      if (setter) setter.call(el, "1800000");
-      el.dispatchEvent(new Event("input", { bubbles: true }));
-    });
-    await expect(page.locator("#v_carPrice")).toHaveText("₹18.00 L");
-  });
-
-  test("calculator chip can be cleared and resets inputs", async ({ page }) => {
-    await revealAll(page);
-    await page.locator('.model[data-name="Hyundai Creta"] .lease-btn').click();
-    await expect(page.locator("#calcChip")).toHaveClass(/show/);
-
-    await page.locator("#calcChipClear").click();
-    await expect(page.locator("#calcChip")).not.toHaveClass(/show/);
-    await expect(page.locator("#v_carPrice")).toHaveText("₹15.00 L");
+    await page.locator('.model[data-name="Hyundai Creta"] .icobtn.wish').click();
+    await expect(page.locator('header [data-testid="header-wishlist"] .cnt')).toHaveText("1");
+    await expect(page.locator(".model[data-name='Hyundai Creta'] .icobtn.wish")).toHaveClass(/on/);
+    // toast appears
+    await expect(page.locator("#toastw .toast")).toContainText("Hyundai Creta");
   });
 
   test("FAQ details toggle open state", async ({ page }) => {
@@ -149,12 +131,12 @@ test.describe("NovusLease+ homepage", () => {
     await expect(second).toHaveAttribute("open", "");
   });
 
-  test("footer contains contact & company links", async ({ page }) => {
-    const footer = page.locator("#footer");
+  test("footer contains links and company info", async ({ page }) => {
+    const footer = page.locator(".footer");
     await footer.scrollIntoViewIfNeeded();
     await expect(footer).toBeVisible();
     await expect(footer).toContainText(/NovusLease/);
-    expect(await footer.locator("a").count()).toBeGreaterThan(3);
+    expect(await footer.locator("a").count()).toBeGreaterThan(8);
   });
 
   test("no console errors and all images load after scrolling", async ({ page }) => {
@@ -207,13 +189,11 @@ test.describe("NovusLease+ homepage", () => {
     await burger.click();
     await expect(menu).toHaveClass(/open/);
     await expect(burger).toHaveAttribute("aria-expanded", "true");
-    await expect(page.locator(".mobile-links")).toHaveCSS("display", "block");
-    await expect(menu.locator(".mobile-links a")).toHaveCount(6);
-    await expect(menu).toContainText("Login / Signup");
-    await expect(menu).toContainText("Book a car");
+    await expect(menu.locator(".mobile-links a")).toHaveCount(4);
 
     await menu.locator(".mobile-links a", { hasText: "Fleet" }).click();
     await expect(menu).not.toHaveClass(/open/);
     await expect(burger).toHaveAttribute("aria-expanded", "false");
+    await page.waitForURL("**/fleet");
   });
 });

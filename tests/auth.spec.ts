@@ -270,7 +270,7 @@ test.describe("NovusLease+ account auth pages", () => {
   test("homepage Login / Signup button opens the login page", async ({ page }) => {
     await page.goto("/");
     const btn = page.locator("header .nav-cta a[href='/login']");
-    await expect(btn).toContainText("Login / Signup");
+    await expect(btn).toContainText("Login");
     await btn.click();
     await expect(page).toHaveURL(/\/login$/);
   });

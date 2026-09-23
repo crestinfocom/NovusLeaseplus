@@ -95,6 +95,14 @@ npm run db:reset    # stop AND delete the volume (fresh empty database)
 Re-running `npm run start:local` after `db:down` reuses the same volume —
 your local edits are still there (seed is skipped when data exists).
 
+To clear **only** the records left behind by E2E signup tests (users whose email
+contains `@example.com` / `@acme.in`, plus their bookings) — without wiping any
+other data — re-seed locally:
+
+```bash
+npm run db:seed:local     # cleans test records only, then upserts demo data
+```
+
 ## Scripts
 
 | Script | Purpose |

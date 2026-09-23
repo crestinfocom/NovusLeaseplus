@@ -2,7 +2,11 @@
 
 Premium self-drive car rental & subscription platform in India — built with **Next.js 16 (App Router)**, **Tailwind CSS v4**, and **Prisma ORM** on a **Neon PostgreSQL** database.
 
-The homepage is a faithful React/Tailwind port of the design reference in [`Design/NovusLease-plus-homepage.html`](./Design/NovusLease-plus-homepage.html).
+The **marketing site** is a faithful React/Tailwind port of the design reference
+[`Design/NovusLease-plus-complete.html`](./Design/NovusLease-plus-complete.html):
+**Home** (`/`), **Fleet** (`/fleet`), **Lease vs Buy** (`/compare`) and **Get a Quote**
+(`/quote`). A shared compare (up to 3 cars) + wishlist store (`src/lib/site-store.tsx`)
+powers the ⇄ / ♡ actions across all four pages.
 
 The app also ships a full account journey — **login**, **signup for four account types** (individual, corporate, personal driver, commercial driver) and **password reset** — backed by real auth APIs and seeded demo accounts.
 
@@ -13,7 +17,7 @@ The app also ships a full account journey — **login**, **signup for four accou
 - **Prisma 7** — ORM with a full car-rental domain schema
 - **Neon PostgreSQL** — serverless Postgres, driver adapter `@prisma/adapter-pg`
 - **Google Fonts** — Fraunces (display) + Inter (body), via `next/font`
-- **Playwright** — E2E tests for homepage + auth flows
+- **Playwright** — E2E tests for every marketing page, auth, admin and cross-viewport UI (109 tests)
 
 ## Prerequisites
 
@@ -170,13 +174,19 @@ scripts/extract-images.mjs    # re-extract images from the design HTML
 src/
   app/
     layout.tsx                # fonts + metadata
-    page.tsx                  # homepage assembly
     globals.css               # design tokens & component CSS (Tailwind v4)
-    api/health/route.ts       # Neon DB connectivity check
+    (site)/                   # the four marketing pages (shared chrome + store)
+      layout.tsx              # TopBar + Header + <main> + Footer inside the store provider
+      site.css                # marketing-page CSS ported from the design reference
+      page.tsx                # Home ("/"): hero, plans, models, how-it-works, FAQ, CTA
+      fleet/                  # /fleet   → FleetExplorer (search / filter / sort grid)
+      compare/                # /compare → lease-vs-buy matrix, tax savings, decision guide
+      quote/                  # /quote   → QuoteBuilder (carousel + loan/lease/sub builder)
+      _components/            # TopBar, Header (mobile menu), Footer, Reveal, ModelCard,
+                              #   FleetExplorer, QuoteBuilder
+    api/health/route.ts       # DB connectivity check
     api/auth/                 # signup / login / forgot-password APIs
-    login/                    # login page + form
-    signup/                   # signup with 4 account types
-    forgot-password/          # password reset page
+    login/ signup/ forgot-password/     # account pages (each fits a single screen)
     admin/                    # admin console (mirrors Design/NovusLease-plus-admin.html)
       admin.css               # admin shell/login styles (scoped under .admin)
       login/                  # admin login page + form (ADMIN role only)
@@ -184,14 +194,13 @@ src/
         dashboard/ bookings/ fleet/ customers/ offers/ settings/   # the six views
     api/admin/                # admin APIs (login/logout/session/stats/bookings/cars/
                               #   customers/promotions/meta/sync-local) — behind an ADMIN session
-  components/                 # one component per homepage section
-    Header (mobile hamburger menu), Hero, BookingWidget, FleetLogos, Usp,
-    Offers, Models, LeaseCalculator, HowItWorks, Showcase, WhyUs,
-    Testimonial, Faq, CtaFinal, Footer, TopBar, Reveal, AuthShell
+  components/
+    AuthShell.tsx             # single-screen shell + footer shared by the auth pages
   lib/
     prisma.ts                 # singleton PrismaClient (Docker or Neon via USE_LOCAL_DB)
     local-sync.ts             # one-way Neon → Docker sync (admin button, rate-limited)
-    calc-bus.ts               # event bus: "Lease this car" → calculator prefill
+    catalog.ts                # client-side car catalogue + lease/loan/subscription params
+    site-store.tsx            # shared compare (max 3) + wishlist store (React context)
     password.ts               # scrypt password hashing / verification
     account-type.ts           # client ⇄ Prisma account-type mapping
     admin-auth.ts             # HMAC-signed admin session cookie (nl_admin)
@@ -199,7 +208,10 @@ src/
     admin-api.ts              # requireAdmin guard for /api/admin/* routes
     search-bus.ts / toast-bus.tsx   # console-wide search + toast buses
 tests/
-  homepage.spec.ts            # homepage E2E (sections, calculator, reveal, mobile menu)
+  homepage.spec.ts            # homepage E2E (sections, compare/wishlist, reveal, FAQ, mobile menu)
+  fleet.spec.ts               # /fleet search, filters, sort, clear, prefill → quote
+  compare.spec.ts             # /compare matrix, tax savings, decision guide, FAQ, CTA
+  quote.spec.ts               # /quote builder, plan toggles, validation, reference codes
   auth.spec.ts                # login / signup / forgot-password E2E
   ui.spec.ts                  # cross-viewport render checks + screenshots
   admin.spec.ts               # admin login/guard, all six views, seeded rows, logout
@@ -252,7 +264,10 @@ npx playwright test --headed   # opened Chromium window; F12 opens DevTools
 
 - `tests/auth.spec.ts` — login/signup/forgot-password flows incl. the seeded demo accounts (creates disposable `@example.com` / `@acme.in` accounts that `db:seed` cleans up next run)
 - `tests/admin.spec.ts` — admin console: unauthenticated redirect, ADMIN-only login, operations-blocked (403), navigation across all six views, seeded rows, sign-out
-- `tests/homepage.spec.ts` — homepage sections, calculator, reveal animations, mobile hamburger menu
+- `tests/homepage.spec.ts` — homepage sections, compare/wishlist actions, reveal animations, FAQ accordion, mobile hamburger menu, no console errors after full scroll
+- `tests/fleet.spec.ts` — `/fleet` search, category/fuel/transmission filters, sort, clear, model-card → quote prefill
+- `tests/compare.spec.ts` — `/compare` matrix, tax savings, decision guide, FAQ, CTA → quote
+- `tests/quote.spec.ts` — `/quote` builder, loan/lease/subscription toggles, validation + reference codes, `?car=` prefill, wishlist tab
 - `tests/ui.spec.ts` — renders every public page at desktop/tablet/mobile sizes, asserts no horizontal overflow, saves screenshots to `test-results/ui/`
 - `tests/admin-ui.spec.ts` — renders every admin view at desktop/tablet/mobile sizes, asserts no horizontal overflow (logged in as admin), saves screenshots to `test-results/ui/`
 
@@ -260,15 +275,24 @@ npx playwright test --headed   # opened Chromium window; F12 opens DevTools
 
 Admin lives at `/admin` (redirects to `/admin/dashboard`; login at `/admin/login`). It uses an HMAC-signed session cookie (`nl_admin`, 7 days) signed with `AUTH_SECRET` — set it in `.env` for anything beyond local dev (a dev fallback exists). Only `ADMIN`-role accounts can open the console; `OPERATIONS` accounts are rejected with a 403 message. The console mirrors `Design/NovusLease-plus-admin.html` with **Dashboard, Bookings, Fleet, Customers, Offers & Codes** and **Settings** views, global search, and toast notifications.
 
-## Features ported from the design
+## Marketing pages (ported from the design)
 
-- Hero with trust stats & animated background
-- Daily / monthly booking widget with live toggle
-- Fleet partner logos
-- USP strip, limited-time deals (NOVUS10/15/20)
-- Best-selling models rail — **"Lease this car"** prefills the calculator
-- Interactive **Lease vs Buy calculator** (EMI math ported 1:1 from the reference script)
-- How-it-works steps, feature showcase, why-us, testimonial, FAQ accordion, app CTA, footer
+The four marketing pages port the flows of
+[`Design/NovusLease-plus-complete.html`](./Design/NovusLease-plus-complete.html):
+
+- **Home (`/`)** — hero with trust stats, USP strip, loan/lease/subscription
+  plans, best-selling models, how-it-works steps, FAQ accordion, CTA
+- **Fleet (`/fleet`)** — searchable, filterable (category / fuel / transmission)
+  and sortable grid of every car
+- **Lease vs Buy (`/compare`)** — comparison matrix, employer-lease tax savings,
+  decision guide and FAQ
+- **Get a Quote (`/quote`)** — car picker + loan / lease / subscription builder
+  with live monthly figures, personalised quote and send-for-approval flows
+- **Compare + wishlist store** — ⇄ adds up to 3 cars to a compare tray, ♡ saves to a
+  wishlist; both persist and stay in sync across all four pages
+  (`src/lib/site-store.tsx`)
+- **Site footer** — design-identical `.foot-grid` (brand, Explore, Company,
+  Support) + `.foot-bottom`, every link pointing at a real route
 
 ## Also included
 
