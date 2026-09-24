@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import VehicleDetail from "../../_components/VehicleDetail";
 import JsonLd from "../../_components/JsonLd";
-import { CARS, carBySlug, carSlug, monthly, termTotal, inr } from "@/lib/catalog";
+import { CARS, carBySlug, carSlug, carFullName, monthly, termTotal, inr } from "@/lib/catalog";
 
 const SITE = "https://novuslease.in";
 
@@ -19,8 +18,8 @@ export async function generateMetadata({
   const { slug } = await params;
   const car = carBySlug(slug);
   if (!car) return { title: "Car not found — NovusLease+" };
-  const title = `${car.make} ${car.name} — Loans, Lease & Subscription | NovusLease+`;
-  const description = `${car.make} ${car.name}: from ${inr(
+  const title = `${carFullName(car)} — Loans, Lease & Subscription | NovusLease+`;
+  const description = `${carFullName(car)}: from ${inr(
     monthly(car, "sub")
   )}/month on a subscription, ${inr(monthly(car, "lease"))}/mo lease or ${inr(
     monthly(car, "loan")
@@ -52,8 +51,8 @@ export default async function VehiclePage({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: `${car.make} ${car.name}`,
-    description: `${car.make} ${car.name} — ${car.body} available on car loan, retail lease and monthly subscription in India.`,
+    name: carFullName(car),
+    description: `${carFullName(car)} — ${car.body} available on car loan, retail lease and monthly subscription in India.`,
     category: car.cls,
     image: `${SITE}${car.img}`,
     brand: { "@type": "Brand", name: car.make },
@@ -67,16 +66,6 @@ export default async function VehiclePage({
 
   return (
     <>
-      <div className="vhero">
-        <div className="wrap">
-          <div className="vbread">
-            <div className="crumb">
-              <Link href="/">Home</Link> &nbsp;/&nbsp;{" "}
-              <Link href="/fleet">Fleet</Link> &nbsp;/&nbsp; {car.name}
-            </div>
-          </div>
-        </div>
-      </div>
       <JsonLd data={jsonLd} />
       <VehicleDetail car={car} />
     </>

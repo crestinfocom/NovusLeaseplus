@@ -100,6 +100,13 @@ export function carBySlug(slug: string): Car | undefined {
   return CARS.find((c) => carSlug(c.name) === slug);
 }
 
+/** Display name — avoids doubling the make when `name` already includes it. */
+export function carFullName(car: { make: string; name: string }): string {
+  return car.name.toLowerCase().startsWith(car.make.toLowerCase())
+    ? car.name
+    : `${car.make} ${car.name}`;
+}
+
 /**
  * Total cost over a full term — monthly figure (GST already included) × tenure.
  * Also available as the one-time down payment on top (callers add R.down).
@@ -171,11 +178,31 @@ export function monthly(car: Car, plan: PlanId): number {
   return Math.round(((P * pct) / 100 + P * 0.0016 + P * 0.0013) * 1.18);
 }
 
+/** Subscription plan durations (months) offered across the car detail + quote pages. */
+export const PLAN_TENURES = [36, 48, 60] as const;
+export type PlanTenure = (typeof PLAN_TENURES)[number];
+
+/** Annual kilometres range for lease / subscription plans. */
+export const KM_MIN_YEAR = 30000;
+export const KM_MAX_YEAR = 150000;
+
+/**
+ * Km factor for lease / subscription rentals. Continuous, based on annual km:
+ * factor 1 at the 30K km/year baseline, then +5%/10k km/yr (lease) and
+ * +6%/10k km/yr (sub) above it. Clamped to the 30K–150K range.
+ */
+export function kmFactor(km: number, plan: "lease" | "sub"): number {
+  const k = Math.min(Math.max(km, KM_MIN_YEAR), KM_MAX_YEAR);
+  const rate = plan === "lease" ? 0.05 : 0.06;
+  return 1 + ((k - KM_MIN_YEAR) / 10000) * rate;
+}
+
 export interface QuoteControls {
   tenure: number;
   downPct: number;
   ratePct: number;
-  km: 1500 | 2500 | 3600;
+  /** Kilometres per year (30,000–150,000). */
+  km: number;
   addons: {
     insurance: boolean;
     maintenance: boolean;
@@ -221,7 +248,7 @@ export function calcPlan(
     down = (P * dp) / 100;
     const ta = 1 + ((36 - ten) / 36) * 0.12;
     const da = 1 - (dp / 100) * 0.55;
-    const ka = c.km === 1500 ? 1 : c.km === 2500 ? 1.07 : 1.14;
+    const ka = kmFactor(c.km, "lease");
     base = ((P * car.pct) / 100) * ta * da * ka;
     ins = Math.round(P * 0.0016);
     mnt = Math.round(P * 0.0013);
@@ -230,7 +257,7 @@ export function calcPlan(
     rows.push(["Maintenance & servicing", mnt]);
   } else {
     const ta = 1 + ((36 - ten) / 36) * 0.22;
-    const ka = c.km === 1500 ? 1 : c.km === 2500 ? 1.08 : 1.16;
+    const ka = kmFactor(c.km, "sub");
     base = ((P * (car.pct + 0.22)) / 100) * ta * ka;
     rows.push(["All-inclusive rental", Math.round(base)]);
     rows.push(["Insurance (bundled)", 0]);
