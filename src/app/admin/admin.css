@@ -408,6 +408,35 @@
   background: var(--red);
   border: 1.5px solid #fff;
 }
+.admin .tb-link {
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  transition: 0.2s;
+}
+.admin .tb-link:hover {
+  border-color: var(--gold-soft);
+  color: var(--gold-deep);
+}
+.admin .login-back {
+  display: inline-block;
+  margin-top: 18px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.admin .login-back:hover {
+  color: var(--gold-deep);
+}
 
 .admin .adm-content {
   padding: 30px;

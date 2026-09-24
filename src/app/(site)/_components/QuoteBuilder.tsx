@@ -795,6 +795,7 @@ export default function QuoteBuilder() {
                     key={p}
                     className={`ptab${plan === p ? " on" : ""}`}
                     data-p={p}
+                    aria-pressed={plan === p}
                     onClick={() => setPlanAndSync(p)}
                   >
                     {p === "sub" && <span className="best">FLEXIBLE</span>}
@@ -828,6 +829,7 @@ export default function QuoteBuilder() {
                       max={60}
                       step={12}
                       value={tenure}
+                      aria-label={plan === "loan" ? "Loan tenure in months" : plan === "sub" ? "Commitment in months" : "Lease tenure in months"}
                       onChange={(e) => setTenure(+e.target.value)}
                     />
                   </div>
@@ -843,6 +845,7 @@ export default function QuoteBuilder() {
                       max={40}
                       step={1}
                       value={downPct}
+                      aria-label="Down payment percentage"
                       onChange={(e) => setDownPct(+e.target.value)}
                     />
                   </div>
@@ -858,6 +861,7 @@ export default function QuoteBuilder() {
                       max={16}
                       step={0.1}
                       value={ratePct}
+                      aria-label="Interest rate percentage per year"
                       onChange={(e) => setRatePct(+e.target.value)}
                     />
                   </div>
@@ -871,6 +875,7 @@ export default function QuoteBuilder() {
                         <button
                           key={k}
                           className={`opt${km === k ? " on" : ""}`}
+                          aria-pressed={km === k}
                           onClick={() => setKm(k)}
                         >
                           {k.toLocaleString("en-IN")}
@@ -978,6 +983,12 @@ export default function QuoteBuilder() {
                         <b>{inr(R[plan].total)}</b>
                       </li>
                     ) : null}
+                    {selected && R ? (
+                      <li data-testid="qb-term-total">
+                        <span>Total over {tenure} months (incl. GST)</span>
+                        <b>{inr(R[plan].total * tenure)}</b>
+                      </li>
+                    ) : null}
                     {selected && R && R[plan].down ? (
                       <li>
                         <span>One-time down payment</span>
@@ -1023,7 +1034,20 @@ export default function QuoteBuilder() {
 
       {/* modal */}
       <div className={`mback2${modal ? " show" : ""}`} onClick={(e) => e.target === e.currentTarget && setModal(null)}>
-        <div className="modal2">
+        <div
+          className="modal2"
+          role="dialog"
+          aria-modal="true"
+          aria-label={
+            modal === "quote"
+              ? "Create personalised quote"
+              : modal === "approve"
+              ? "Send for approval"
+              : modal === "ok"
+              ? "Quote summary"
+              : "Quote dialog"
+          }
+        >
           <div className="mh">
             <h3>
               {modal === "quote"

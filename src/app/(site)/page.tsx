@@ -2,21 +2,71 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Reveal from "./_components/Reveal";
 import ModelCard from "./_components/ModelCard";
+import JsonLd from "./_components/JsonLd";
 import { CARS, PICKED_MODELS } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "NovusLease+ — Car Loan, Lease & Subscription in India",
   description:
     "Buy on loan, take a retail lease, or subscribe monthly. Compare up to 3 cars side by side and get an instant quote.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "NovusLease+ — Car Loan, Lease & Subscription in India",
+    description:
+      "Buy on loan, take a retail lease, or subscribe monthly. Compare up to 3 cars side by side.",
+    type: "website",
+    siteName: "NovusLease+",
+    images: ["/images/hero.jpg"],
+  },
 };
 
 const PICKED = PICKED_MODELS.map((n) => CARS.find((c) => c.name === n)).filter(
   (c): c is (typeof CARS)[number] => Boolean(c)
 );
 
+const HOME_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      name: "NovusLease+",
+      url: "https://novuslease.in",
+      logo: "https://novuslease.in/images/logo.png",
+      contactPoint: {
+        "@type": "ContactPoint",
+        telephone: "+91-1800-XXX-XXXX",
+        contactType: "customer service",
+        availableLanguage: ["en", "hi"],
+      },
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "Should I lease or buy a car in India?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Leasing is cheaper per month (30–40% below a loan EMI) but you keep no ownership. Buying with a loan costs more monthly but keeps the resale value. Employer salary-sacrifice leases offer up to ~31% tax saving.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "What plans does NovusLease+ offer?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Three ways to drive: a Car Loan to own, a Retail Car Lease with insurance and servicing bundled, and an all-inclusive Monthly Subscription with no down payment that you can cancel with 30 days notice.",
+          },
+        },
+      ],
+    },
+  ],
+};
+
 export default function HomePage() {
   return (
     <>
+      <JsonLd data={HOME_LD} />
       <section className="hero">
         <div className="hero-bg">
           {/* eslint-disable-next-line @next/next/no-img-element */}

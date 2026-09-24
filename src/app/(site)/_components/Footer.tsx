@@ -48,6 +48,7 @@ export default function Footer() {
             <Link href="/fleet">Fleet</Link>
             <Link href="/compare">Lease vs Buy</Link>
             <Link href="/quote">Get a Quote</Link>
+            <Link href="/track">Track a booking</Link>
           </div>
           <div className="foot-col">
             <h5>Company</h5>
@@ -59,9 +60,21 @@ export default function Footer() {
           <div className="foot-col">
             <h5>Support</h5>
             <Link href="/#faq">FAQs</Link>
+            <Link href="/quote#fees">Fees &amp; charges</Link>
             <Link href="/#plans">Terms of service</Link>
             <Link href="/#how">Privacy policy</Link>
             <Link href="/#faq">Help centre</Link>
+          </div>
+          <div className="foot-col foot-biz">
+            <h5>Business &amp; Operations</h5>
+            <p>
+              Fleet, bookings, customers, payments and settings for NovusLease+
+              staff and partners — separate from the customer site.
+            </p>
+            <Link href="/admin/login" data-testid="footer-business-login">
+              Business login →
+            </Link>
+            <Link href="/fleet#compare-tray">Partner onboarding</Link>
           </div>
         </div>
         <div className="foot-bottom">
@@ -70,6 +83,12 @@ export default function Footer() {
             cities across India
           </span>
           <span>Best-price guarantee · Prices inclusive of taxes</span>
+        </div>
+        <div className="foot-terms" data-testid="footer-terms">
+          <span>Rental</span> = short-term self-drive (hour / day / week) ·{" "}
+          <span>Lease</span> = fixed 12–60 month term with buy-out ·{" "}
+          <span>Subscription</span> = all-inclusive, cancel with 30 days notice ·{" "}
+          <span>Loan</span> = you own the car.
         </div>
       </div>
     </footer>

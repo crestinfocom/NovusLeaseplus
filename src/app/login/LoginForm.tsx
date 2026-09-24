@@ -146,15 +146,8 @@ export default function LoginForm() {
           <span className="dot" aria-hidden="true" />
           Demo accounts — unique password per role
         </summary>
+        <div className="auth-demo-group">Customers</div>
         <ul>
-          <li>
-            <span>Admin</span>
-            <code>admin@novuslease.in — Nova@admin1</code>
-          </li>
-          <li>
-            <span>Operations</span>
-            <code>operations@novuslease.in — Nova@ops2024</code>
-          </li>
           <li>
             <span>Individual</span>
             <code>individual@novuslease.in — Nova@user1</code>
@@ -170,6 +163,17 @@ export default function LoginForm() {
           <li>
             <span>Commercial driver</span>
             <code>commercialdriver@novuslease.in — Nova@cdrive1</code>
+          </li>
+        </ul>
+        <div className="auth-demo-group">Business &amp; operations</div>
+        <ul>
+          <li>
+            <span>Admin</span>
+            <code>admin@novuslease.in — Nova@admin1</code>
+          </li>
+          <li>
+            <span>Operations</span>
+            <code>operations@novuslease.in — Nova@ops2024</code>
           </li>
         </ul>
       </details>

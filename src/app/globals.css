@@ -2021,6 +2021,17 @@
     background: #3f9d7d;
     box-shadow: 0 0 0 3px rgba(63, 157, 125, 0.25);
   }
+  .auth-demo .auth-demo-group {
+    margin-top: 14px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gold-deep);
+  }
+  .auth-demo .auth-demo-group + ul {
+    margin-top: 4px;
+  }
   .auth-demo code {
     background: var(--cream);
     border: 1px solid var(--line);

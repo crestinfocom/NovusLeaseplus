@@ -6,6 +6,15 @@ export const metadata: Metadata = {
   title: "Lease vs Buy — NovusLease+",
   description:
     "Car loan or car lease — which actually costs less? A clear, India-specific comparison of EMI, down payment, tax benefit, mileage limits, resale value and true total cost.",
+  alternates: { canonical: "/compare" },
+  openGraph: {
+    title: "Lease vs Buy — NovusLease+",
+    description:
+      "Car loan or car lease — which actually costs less? A clear, India-specific comparison.",
+    type: "website",
+    siteName: "NovusLease+",
+    images: ["/images/sedan.jpg"],
+  },
 };
 
 export default function ComparePage() {

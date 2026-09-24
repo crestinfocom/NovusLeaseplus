@@ -202,6 +202,13 @@ export default function AdminShell({
           <button className="tb-icon" title="Help" type="button">
             ?
           </button>
+          <Link
+            className="tb-link"
+            href="/"
+            data-testid="admin-view-site"
+          >
+            View public site ↗
+          </Link>
         </div>
 
         <div className="adm-content">

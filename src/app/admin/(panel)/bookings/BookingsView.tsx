@@ -10,6 +10,7 @@ import {
   toDateInput,
 } from "@/lib/admin-format";
 import { pushToast } from "@/lib/toast-bus";
+import { bookingTypeLabel } from "@/lib/terms";
 import type { BookingRow, MetaData } from "../admin-types";
 
 type Filter = "all" | "active" | "pending" | "completed" | "cancelled";
@@ -238,7 +239,12 @@ export default function BookingsView() {
               )}
               {rows.map((b) => (
                 <tr key={b.id}>
-                  <td className="cell-main">{b.bookingRef}</td>
+                  <td className="cell-main">
+                    <div>{b.bookingRef}</div>
+                    <div className="cell-sub" data-testid="booking-type-label">
+                      {bookingTypeLabel(b.bookingType)}
+                    </div>
+                  </td>
                   <td>
                     <div className="car-cell">
                       <div className="cust-av">{initials(b.user.name)}</div>

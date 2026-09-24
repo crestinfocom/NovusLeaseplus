@@ -10,7 +10,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
-import { type Car, MAX_COMPARE, inr, monthly } from "@/lib/catalog";
+import { type Car, MAX_COMPARE, inr, monthly, termTotal } from "@/lib/catalog";
 
 type ToastType = "ok" | "warn" | "pink";
 interface Toast {
@@ -292,7 +292,7 @@ function Toasts() {
   const { toasts } = useStore();
   if (!toasts.length) return null;
   return (
-    <div className="toastw" id="toastw">
+    <div className="toastw" id="toastw" role="status" aria-live="polite">
       {toasts.map((t) => (
         <div key={t.id} className={`toast${t.type === "warn" ? " warn" : t.type === "pink" ? " pink" : ""}`}>
           <span className="ic">{t.type === "warn" ? "!" : t.type === "pink" ? "♥" : "✓"}</span>
@@ -310,7 +310,7 @@ function CompareTray() {
   const slots: (Car | null)[] = [...compare];
   while (slots.length < MAX_COMPARE) slots.push(null);
   return (
-    <div className="cmptray show" id="cmptray">
+    <div className="cmptray show" id="cmptray" role="region" aria-label="Compare tray">
       <div className="wrap-wide">
         <div className="in">
           <span className="lbl">Compare</span>
@@ -330,7 +330,7 @@ function CompareTray() {
                   </button>
                 </div>
               ) : (
-                <div className="cslot empty" key={i}>
+                <div className="cslot empty" key={i} aria-hidden="true">
                   + Add
                 </div>
               )
@@ -360,6 +360,14 @@ function CompareTray() {
 function WishlistDrawer() {
   const { wish, drawerOpen, closeWishlist, removeWish, toggleCompare, setCompareNow, clearWish, toast } =
     useStore();
+  const drawerRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (drawerOpen) {
+      drawerRef.current?.querySelector<HTMLElement>("#drClose")?.focus();
+    }
+  }, [drawerOpen]);
+
   if (!drawerOpen) return null;
   return (
     <>
@@ -368,7 +376,14 @@ function WishlistDrawer() {
         id="drawerBack"
         onClick={closeWishlist}
       />
-      <aside className="drawer show" id="drawer">
+      <aside
+        className="drawer show"
+        id="drawer"
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Your wishlist"
+      >
         <div className="drawer-h">
           <div>
             <h3 id="drTitle">Your wishlist</h3>
@@ -468,6 +483,14 @@ function WishlistDrawer() {
 function CompareModal() {
   const { compare, modalOpen, closeCompare, removeCompare, moveToWish, moveAllToWish } =
     useStore();
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (modalOpen) {
+      modalRef.current?.querySelector<HTMLElement>("#cmpX")?.focus();
+    }
+  }, [modalOpen]);
+
   if (!modalOpen) return null;
 
   const mins = { loan: Infinity, lease: Infinity, sub: Infinity } as Record<
@@ -492,8 +515,19 @@ function CompareModal() {
   );
 
   return (
-    <div className="mback" id="cmpBack" style={{ display: "flex" }} onClick={(e) => e.target === e.currentTarget && closeCompare()}>
-      <div className="modal cmp-modal">
+    <div
+      className="mback"
+      id="cmpBack"
+      style={{ display: "flex" }}
+      onClick={(e) => e.target === e.currentTarget && closeCompare()}
+    >
+      <div
+        className="modal cmp-modal"
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Compare cars"
+      >
         <div
           style={{
             padding: "20px 24px",
@@ -507,7 +541,7 @@ function CompareModal() {
           <span id="cmpCount" style={{ fontSize: ".8rem", color: "var(--muted)" }}>
             {compare.length} of {MAX_COMPARE} selected
           </span>
-          <button id="cmpX" style={{ marginLeft: "auto", width: 34, height: 34, borderRadius: 10, border: "1px solid var(--line)", background: "var(--paper)", cursor: "pointer" }} onClick={closeCompare}>
+          <button id="cmpX" aria-label="Close compare dialog" style={{ marginLeft: "auto", width: 34, height: 34, borderRadius: 10, border: "1px solid var(--line)", background: "var(--paper)", cursor: "pointer" }} onClick={closeCompare}>
             ✕
           </button>
         </div>
@@ -546,6 +580,24 @@ function CompareModal() {
               {row("🏦 Car Loan", (c) => inr(monthly(c, "loan")), (c) => monthly(c, "loan") === mins.loan)}
               {row("🔑 Retail Lease", (c) => inr(monthly(c, "lease")), (c) => monthly(c, "lease") === mins.lease)}
               {row("♾️ Subscription", (c) => inr(monthly(c, "sub")), (c) => monthly(c, "sub") === mins.sub)}
+              <tr className="grp">
+                <td colSpan={compare.length + 1}>Total over 36 months (incl. GST)</td>
+              </tr>
+              {row(
+                "🏦 Car Loan total",
+                (c) => inr(termTotal(c, "loan")),
+                (c) => termTotal(c, "loan") === Math.min(...compare.map((x) => termTotal(x, "loan")))
+              )}
+              {row(
+                "🔑 Retail Lease total",
+                (c) => inr(termTotal(c, "lease")),
+                (c) => termTotal(c, "lease") === Math.min(...compare.map((x) => termTotal(x, "lease")))
+              )}
+              {row(
+                "♾️ Subscription total",
+                (c) => inr(termTotal(c, "sub")),
+                (c) => termTotal(c, "sub") === Math.min(...compare.map((x) => termTotal(x, "sub")))
+              )}
               <tr className="grp">
                 <td colSpan={compare.length + 1}>Included</td>
               </tr>
