@@ -9,6 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/compare",
     "/quote",
     "/track",
+    "/drive-with-us",
   ];
   const vehicles = CARS.map((c) => `/fleet/${carSlug(c.name)}`);
   return [...staticRoutes, ...vehicles].map((r) => ({
