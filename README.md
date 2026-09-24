@@ -4,9 +4,10 @@ Premium self-drive car rental & subscription platform in India — built with **
 
 The **marketing site** is a faithful React/Tailwind port of the design reference
 [`Design/NovusLease-plus-complete.html`](./Design/NovusLease-plus-complete.html):
-**Home** (`/`), **Fleet** (`/fleet`), **Lease vs Buy** (`/compare`) and **Get a Quote**
-(`/quote`). A shared compare (up to 3 cars) + wishlist store (`src/lib/site-store.tsx`)
-powers the ⇄ / ♡ actions across all four pages.
+**Home** (`/`), **Fleet** (`/fleet`), **Lease vs Buy** (`/compare`), **Get a Quote**
+(`/quote`) and the **Drive With Us** commercial vehicle lease program (`/drive-with-us`).
+A shared compare (up to 3 cars) + wishlist store (`src/lib/site-store.tsx`)
+powers the ⇄ / ♡ actions across the car pages.
 
 The app also ships a full account journey — **login**, **signup for four account types** (individual, corporate, personal driver, commercial driver) and **password reset** — backed by real auth APIs and seeded demo accounts.
 
@@ -195,9 +196,10 @@ src/
       compare/                # /compare → lease-vs-buy matrix, tax savings, decision guide
       quote/                  # /quote → QuoteBuilder + FeesGuide (fees & charges, glossary)
       track/                  # /track → TrackLookup (status journey by booking reference)
+      drive-with-us/          # /drive-with-us → Commercial Vehicle Lease Program landing page
       _components/            # TopBar, Header (mobile menu), Footer, OfflineNotice, Reveal,
                               #   ModelCard, FleetExplorer, QuoteBuilder, VehicleDetail,
-                              #   FeesGuide, ShareButtons, JsonLd
+                              #   FeesGuide, ShareButtons, JsonLd, DriveCalculator
     robots.ts / sitemap.ts    # robots.txt + XML sitemap (static routes + all car slugs)
     api/health/route.ts       # DB connectivity check
     api/bookings/lookup/      # public GET /api/bookings/lookup?ref= (status + journey)
@@ -290,6 +292,7 @@ npx playwright test --headed   # opened Chromium window; F12 opens DevTools
 - `tests/fleet.spec.ts` — `/fleet` search, category/fuel/transmission filters, sort, clear, model-card → quote prefill
 - `tests/compare.spec.ts` — `/compare` matrix, tax savings, decision guide, FAQ, CTA → quote
 - `tests/quote.spec.ts` — `/quote` builder, loan/lease/subscription toggles, validation + reference codes, `?car=` prefill, wishlist tab
+- `tests/drive-with-us.spec.ts` — `/drive-with-us` program page: hero / apply CTA / jump links, configurable rules + 6-step journey, calculator behaviour (tenure change updates the estimated contribution), estimate disclaimer, vehicle categories, eligibility & documents, FAQ toggle + signup CTA, and canonical / JSON-LD presence
 - `tests/ui.spec.ts` — renders every public page at desktop/tablet/mobile sizes, asserts no horizontal overflow, saves screenshots to `test-results/ui/`
 - `tests/admin-ui.spec.ts` — renders every admin view at desktop/tablet/mobile sizes, asserts no horizontal overflow (logged in as admin), saves screenshots to `test-results/ui/`
 - `tests/ux.spec.ts` — UX / product-gap suite (see tree above) incl. the public booking-lookup API and vehicle-page SEO
@@ -324,6 +327,16 @@ The four marketing pages port the flows of
 - **Track a booking (`/track`)** — persistent status page + journey timeline for
   any booking by reference (public `GET /api/bookings/lookup?ref=`), reachable
   from the header ("Track a booking →") and footer
+- **Drive With Us (`/drive-with-us`)** — commercial vehicle lease program landing
+  page for drivers/partners. It walks the core model — select an eligible
+  commercial vehicle → pay an initial down payment (₦20,000–₦40,000) → sign a
+  36-month lease → receive the vehicle → complete trips → earn commissions →
+  contribute on a configured daily/weekly model. Includes configurable program
+  rules, an indicative lease & earnings estimator (`DriveCalculator`, clearly
+  labelled "estimate" and never contractual), eligible vehicle categories,
+  eligibility + required-document lists, FAQ, JSON-LD (`Service` + `FAQPage`),
+  canonical/OG metadata and an "Apply to drive with us →" CTA into signup.
+  Linked from the header, footer, sitemap and `robots` crawl.
 - **Compare + wishlist store** — ⇄ adds up to 3 cars to a compare tray, ♡ saves to a
   wishlist; both persist and stay in sync across all four pages
   (`src/lib/site-store.tsx`); the compare modal lists 36-month totals per plan

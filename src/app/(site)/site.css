@@ -885,3 +885,75 @@ a:focus:not(:focus-visible),button:focus:not(:focus-visible),input:focus:not(:fo
 .tk-pill.completed{background:#e9eef5;color:var(--ink-2)}
 .tk-pill.cancelled{background:#fbe8e6;color:var(--red)}
 
+/* ===== Drive With Us — Commercial Vehicle Lease Program ===== */
+.dwu-hero{position:relative;color:#fff;overflow:hidden;padding:72px 0 94px}
+.dwu-hero-bg{position:absolute;inset:0;z-index:-2}
+.dwu-hero-bg img{width:100%;height:100%;object-fit:cover;object-position:center 55%}
+.dwu-hero-bg::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,rgba(12,20,38,.95),rgba(12,20,38,.8) 45%,rgba(12,20,38,.45))}
+.dwu-eyebrow{display:inline-flex;align-items:center;gap:10px;width:fit-content;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);padding:8px 16px;border-radius:100px;font-size:.74rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);margin-bottom:22px}
+.dwu-hero h1{font-size:clamp(2.2rem,4.6vw,3.5rem);font-weight:700;margin-bottom:16px;max-width:820px}
+.dwu-hero h1 em{font-style:italic;font-weight:400;color:var(--gold-soft)}
+.dwu-hero p{font-size:1.06rem;color:rgba(255,255,255,.8);max-width:660px;font-weight:300}
+.dwu-hero-actions{display:flex;gap:14px;flex-wrap:wrap;margin:34px 0 30px}
+.dwu-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.dwu-stats .usp-item{border-bottom:0}
+@media(max-width:1000px){
+  .dwu-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dwu-stats .usp-item:nth-child(2){border-right:none}
+}
+@media(max-width:640px){
+  .dwu-hero{padding:56px 0 70px}
+  .dwu-stats{grid-template-columns:1fr}
+  .dwu-stats .usp-item{border-right:none;border-bottom:1px solid var(--line-dk)}
+  .dwu-stats .usp-item:last-child{border-bottom:none}
+}
+
+.dwu-calc{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);overflow:hidden}
+.dwu-calc-in{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0}
+.dwu-calc-inputs{min-width:0;padding:30px 32px}
+.dwu-calc-results{min-width:0;padding:30px 32px;background:linear-gradient(170deg,var(--cream),var(--paper));border-left:1px solid var(--line)}
+.dwu-results-head .eyebrow{margin-bottom:12px}
+.dwu-results-head h3{font-size:1.4rem;margin-bottom:6px}
+.dwu-results-head p{font-size:.84rem;color:var(--muted);margin-bottom:18px;line-height:1.55;max-width:52ch}
+.dwu-chips{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dwu-qtotal{text-align:center;padding:22px;border-radius:14px;background:var(--ink);color:#fff;margin-bottom:20px;position:relative;overflow:hidden}
+.dwu-qtotal::before{content:"";position:absolute;top:-50%;right:-15%;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(191,152,93,.3),transparent 65%)}
+.dwu-qtotal .l{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;opacity:.72;position:relative;display:block}
+.dwu-qtotal .v{font-family:'Fraunces',serif;font-size:2.4rem;font-weight:700;line-height:1.1;margin:8px 0 2px;position:relative;display:block}
+.dwu-qtotal .v small{font-size:.9rem;opacity:.7}
+.dwu-qtotal .s{font-size:.8rem;color:rgba(255,255,255,.66);position:relative}
+.dwu-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.dwu-stat{border:1px solid var(--line);border-radius:13px;background:var(--paper);padding:14px 10px;text-align:center;min-width:0}
+.dwu-stat .l{display:block;font-size:.66rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);line-height:1.4}
+.dwu-stat .v{display:block;font-family:'Fraunces',serif;font-weight:700;font-size:1.08rem;color:var(--gold-deep);margin-top:5px;white-space:nowrap}
+.dwu-est-note{font-size:.76rem;color:var(--muted);line-height:1.6;margin:14px 0 0}
+.dwu-calc-disclaimer{text-align:center;font-size:.74rem;color:var(--muted);margin-top:20px}
+@media(max-width:1000px){
+  .dwu-calc-in{grid-template-columns:1fr}
+  .dwu-calc-results{border-left:none;border-top:1px solid var(--line)}
+}
+@media(max-width:640px){
+  .dwu-calc-inputs,.dwu-calc-results{padding:24px 20px}
+  .dwu-stat-grid{grid-template-columns:1fr}
+}
+
+.dwu-veh-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px}
+.dwu-veh{min-width:0;background:var(--paper);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;transition:transform .3s var(--ease),box-shadow .3s,border-color .25s;display:flex;flex-direction:column}
+.dwu-veh:hover{transform:translateY(-6px);box-shadow:var(--shadow);border-color:var(--gold-soft)}
+.dwu-veh-pic{position:relative;height:150px;overflow:hidden;background:linear-gradient(160deg,#e9ebe7,#f2f3ef)}
+.dwu-veh-pic img{width:100%;height:100%;object-fit:cover;transition:transform .55s var(--ease)}
+.dwu-veh:hover .dwu-veh-pic img{transform:scale(1.06)}
+.dwu-veh-tag{position:absolute;top:12px;left:12px;font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:5px 11px;border-radius:100px;background:rgba(31,95,79,.92);color:#fff;box-shadow:var(--shadow-sm)}
+.dwu-veh-bd{padding:18px 18px 20px;display:flex;flex-direction:column;flex:1;gap:12px}
+.dwu-veh-top{display:flex;gap:12px;align-items:flex-start}
+.dwu-veh-ic{width:40px;height:40px;border-radius:12px;background:rgba(191,152,93,.12);display:grid;place-items:center;font-size:1.15rem;flex-shrink:0;border:1px solid var(--gold-soft)}
+.dwu-veh-top h4{font-size:1.05rem;margin-bottom:3px}
+.dwu-veh-top p{font-size:.8rem;color:var(--muted);line-height:1.45}
+.dwu-veh-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;border-top:1px dashed var(--line);padding-top:12px;font-family:'Fraunces',serif;font-size:1.05rem;font-weight:700;color:var(--gold-deep)}
+.dwu-veh-row em{font-family:'Inter';font-style:normal;font-size:.68rem;font-weight:600;color:var(--muted);background:var(--cream);border:1px solid var(--line);padding:3px 9px;border-radius:100px}
+.dwu-veh-bd .btn{justify-content:center;margin-top:2px}
+.dwu-note{text-align:center;font-size:.76rem;color:var(--muted);margin-top:26px}
+.dwu-cta-actions{display:flex;gap:12px;flex-wrap:wrap;position:relative}
+@media(max-width:1000px){.dwu-veh-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.dwu-veh-grid{grid-template-columns:1fr}.dwu-cta-actions .btn{width:100%;justify-content:center}}
+

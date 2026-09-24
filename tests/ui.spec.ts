@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const ROUTES = ["/", "/fleet", "/compare", "/quote", "/login", "/signup", "/forgot-password"];
+const ROUTES = ["/", "/fleet", "/compare", "/quote", "/track", "/drive-with-us", "/login", "/signup", "/forgot-password"];
 
 const VIEWPORTS: { name: string; width: number; height: number }[] = [
   { name: "desktop", width: 1280, height: 720 },

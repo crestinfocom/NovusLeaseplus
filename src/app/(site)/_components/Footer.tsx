@@ -49,12 +49,13 @@ export default function Footer() {
             <Link href="/compare">Lease vs Buy</Link>
             <Link href="/quote">Get a Quote</Link>
             <Link href="/track">Track a booking</Link>
+            <Link href="/drive-with-us">Drive With Us</Link>
           </div>
           <div className="foot-col">
             <h5>Company</h5>
             <Link href="/#plans">About us</Link>
             <Link href="/quote">Contact us</Link>
-            <Link href="/fleet">Become a partner</Link>
+            <Link href="/drive-with-us">Become a partner</Link>
             <Link href="/quote">Refer &amp; earn</Link>
           </div>
           <div className="foot-col">

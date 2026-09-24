@@ -87,10 +87,11 @@ test.describe("NovusLease+ homepage (marketing)", () => {
       await expect(page.locator(href)).toBeVisible();
     }
     const nav = page.locator("header .navlinks a");
-    await expect(nav).toHaveCount(4);
+    await expect(nav).toHaveCount(5);
     await expect(nav.nth(1)).toHaveAttribute("href", "/fleet");
     await expect(nav.nth(2)).toHaveAttribute("href", "/compare");
     await expect(nav.nth(3)).toHaveAttribute("href", "/quote");
+    await expect(nav.nth(4)).toHaveAttribute("href", "/drive-with-us");
   });
 
   test("adding cars to compare shows tray and updates header badge", async ({
@@ -189,7 +190,7 @@ test.describe("NovusLease+ homepage (marketing)", () => {
     await burger.click();
     await expect(menu).toHaveClass(/open/);
     await expect(burger).toHaveAttribute("aria-expanded", "true");
-    await expect(menu.locator(".mobile-links a")).toHaveCount(4);
+    await expect(menu.locator(".mobile-links a")).toHaveCount(5);
 
     await menu.locator(".mobile-links a", { hasText: "Fleet" }).click();
     await expect(menu).not.toHaveClass(/open/);

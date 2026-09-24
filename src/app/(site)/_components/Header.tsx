@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { href: "/fleet", label: "Fleet", route: "fleet" },
   { href: "/compare", label: "Lease vs Buy", route: "compare" },
   { href: "/quote", label: "Get a Quote", route: "quote" },
+  { href: "/drive-with-us", label: "Drive With Us", route: "drive-with-us" },
 ];
 
 export default function Header() {
