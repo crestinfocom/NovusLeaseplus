@@ -13,8 +13,11 @@ import {
   CARS,
   CITIES,
   PLANS,
+  KM_MAX_YEAR,
+  KM_MIN_YEAR,
   type Car,
   type PlanId,
+  type PlanTenure,
   inr,
   calcPlan,
   quoteRef,
@@ -154,10 +157,10 @@ export default function QuoteBuilder() {
   const [tab, setTab] = useState<Tab>("popular");
   const [selected, setSelected] = useState<Car | null>(null);
   const [plan, setPlan] = useState<PlanId>("lease");
-  const [tenure, setTenure] = useState(36);
+  const [tenure, setTenure] = useState<PlanTenure>(36);
   const [downPct, setDownPct] = useState(0);
   const [ratePct, setRatePct] = useState(9.5);
-  const [km, setKm] = useState<1500 | 2500 | 3600>(1500);
+  const [km, setKm] = useState<number>(KM_MIN_YEAR);
   const [addons, setAddons] = useState({
     insurance: true,
     maintenance: true,
@@ -825,12 +828,12 @@ export default function QuoteBuilder() {
                     <input
                       type="range"
                       className="single"
-                      min={12}
+                      min={36}
                       max={60}
                       step={12}
                       value={tenure}
                       aria-label={plan === "loan" ? "Loan tenure in months" : plan === "sub" ? "Commitment in months" : "Lease tenure in months"}
-                      onChange={(e) => setTenure(+e.target.value)}
+                      onChange={(e) => setTenure(+e.target.value as PlanTenure)}
                     />
                   </div>
                   <div className="ctrl" id="ctrlDown" style={{ display: plan === "sub" ? "none" : "" }}>
@@ -867,21 +870,19 @@ export default function QuoteBuilder() {
                   </div>
                   <div className={`ctrl hideable${plan === "loan" ? " off" : ""}`} id="ctrlKm">
                     <div className="lbl">
-                      <span>Monthly kilometres</span>
-                      <b>{km.toLocaleString("en-IN")} km</b>
+                      <span>Kilometres per year</span>
+                      <b>{km.toLocaleString("en-IN")} km/year</b>
                     </div>
-                    <div className="kmopts">
-                      {([1500, 2500, 3600] as const).map((k) => (
-                        <button
-                          key={k}
-                          className={`opt${km === k ? " on" : ""}`}
-                          aria-pressed={km === k}
-                          onClick={() => setKm(k)}
-                        >
-                          {k.toLocaleString("en-IN")}
-                        </button>
-                      ))}
-                    </div>
+                    <input
+                      type="range"
+                      className="single"
+                      min={KM_MIN_YEAR}
+                      max={KM_MAX_YEAR}
+                      step={5000}
+                      value={km}
+                      aria-label="Kilometres per year"
+                      onChange={(e) => setKm(+e.target.value)}
+                    />
                   </div>
                   <div className="ctrl">
                     <div className="lbl" style={{ marginBottom: 12 }}>

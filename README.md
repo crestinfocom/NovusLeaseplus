@@ -307,9 +307,14 @@ The four marketing pages port the flows of
   plans, best-selling models, how-it-works steps, FAQ accordion, CTA
 - **Fleet (`/fleet`)** — searchable, filterable (category / fuel / transmission)
   and sortable grid of every car
-- **Vehicle detail (`/fleet/<slug>`)** — shareable per-car pages (breadcrumb,
-  specs, plan estimates with 36-month totals, WhatsApp / X / copy-link share,
-  JSON-LD `Product` + aggregate offer, canonical + open-graph). Links from every
+- **Vehicle detail (`/fleet/<slug>`)** — Quiklyz-style shareable per-car pages:
+  dark hero price band (starting ₹/month, ₹0 down, delivery), interactive image
+  gallery + colour swatches, a **Subscription Models** builder (Assured Buyback /
+  Flexi Advantage with **36 / 48 / 60-month** terms and a **30K–150K km/year**
+  slider), live monthly rental + buyback value, all-plan 36-month totals,
+  specifications, features, "What Is Included" section, similar-car rail,
+  subscription-vs-loan outflow comparison, WhatsApp / X / copy-link share, and
+  JSON-LD `Product` + aggregate offer (+ canonical + open-graph). Links from every
   model card (`View details`) and the SEO sitemap.
 - **Lease vs Buy (`/compare`)** — comparison matrix, employer-lease tax savings,
   decision guide and FAQ
