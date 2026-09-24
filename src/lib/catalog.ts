@@ -88,6 +88,26 @@ export function carByName(name: string): Car | undefined {
   return CARS.find((c) => c.name.toLowerCase() === name.toLowerCase());
 }
 
+/** URL-safe slug for a car — powers the shareable /fleet/[slug] pages. */
+export function carSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+export function carBySlug(slug: string): Car | undefined {
+  return CARS.find((c) => carSlug(c.name) === slug);
+}
+
+/**
+ * Total cost over a full term — monthly figure (GST already included) × tenure.
+ * Also available as the one-time down payment on top (callers add R.down).
+ */
+export function termTotal(car: Car, plan: PlanId, months = 36): number {
+  return Math.round(Math.max(monthly(car, plan), 0) * months);
+}
+
 export function inr(n: number): string {
   return "₹" + Math.round(n).toLocaleString("en-IN");
 }

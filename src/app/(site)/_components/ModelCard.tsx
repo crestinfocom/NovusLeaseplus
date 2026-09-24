@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useStore, CarIconActions, CarRowActions } from "@/lib/site-store";
-import { type Car, inr, lakh, monthly } from "@/lib/catalog";
+import { type Car, inr, lakh, monthly, termTotal, carSlug } from "@/lib/catalog";
 
 export default function ModelCard({
   car,
@@ -13,23 +13,24 @@ export default function ModelCard({
 }) {
   const { compare } = useStore();
   const cmpOn = compare.some((c) => c.name === car.name);
+  const href = `/fleet/${carSlug(car.name)}`;
   return (
     <article className={`model${cmpOn ? " cmp-on" : ""}`} data-name={car.name} data-car={car.name}>
       <div className="pic">
-        <span className="badge">
-          {cmpOn ? "★ Comparing" : car.tag === "new" ? "New launch" : "★ Popular"}
-        </span>
+        <Link href={href} className="pic-link" aria-label={`View ${car.name} details`}>
+          <span className="badge">
+            {cmpOn ? "★ Comparing" : car.tag === "new" ? "New launch" : "★ Popular"}
+          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={car.img} alt={car.name} loading="lazy" />
+        </Link>
         <CarIconActions car={car} />
         <span className="fuel">{car.fuel}</span>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={car.img}
-          alt={car.name}
-          loading="lazy"
-        />
       </div>
       <div className="mbody">
-        <h4 className="car-name">{car.name}</h4>
+        <Link href={href} className="name-link">
+          <h4 className="car-name">{car.name}</h4>
+        </Link>
         <div className="cls">{car.cls}</div>
         <div className="seat">
           <span>👥 {car.seats || 5} Seater</span>
@@ -43,12 +44,20 @@ export default function ModelCard({
           </div>
           <span className="onroad">{lakh(car.onroad)} on-road</span>
         </div>
-        <Link
-          className="lease-btn"
-          href={`/quote?car=${encodeURIComponent(car.name)}`}
-        >
-          📄 Get a quote →
-        </Link>
+        <div className="total-line" data-testid="card-total">
+          {inr(termTotal(car, "lease"))} total over 36 months
+        </div>
+        <div className="mctas">
+          <Link
+            className="lease-btn"
+            href={`/quote?car=${encodeURIComponent(car.name)}`}
+          >
+            📄 Get a quote →
+          </Link>
+          <Link className="view-btn" href={href}>
+            View details
+          </Link>
+        </div>
         <CarRowActions car={car} />
       </div>
     </article>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useStore } from "@/lib/site-store";
@@ -14,6 +14,8 @@ const NAV_LINKS = [
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const burgerRef = useRef<HTMLButtonElement>(null);
   const { wish, compare, openWishlist, openCompare } = useStore();
   const pathname = usePathname();
 
@@ -32,6 +34,29 @@ export default function Header() {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  // Accessibility: Escape closes the mobile menu and returns focus to the burger.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        burgerRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  const toggleMenu = (next: boolean) => {
+    setOpen(next);
+    if (next) {
+      // Move focus into the menu once it is open.
+      requestAnimationFrame(() => {
+        menuRef.current?.querySelector<HTMLElement>("a")?.focus();
+      });
+    }
+  };
 
   const current = (route: string) =>
     route === "home" ? pathname === "/" : pathname.startsWith(route);
@@ -85,12 +110,13 @@ export default function Header() {
             </Link>
             <button
               type="button"
+              ref={burgerRef}
               className={`burger${open ? " open" : ""}`}
               aria-label={open ? "Close menu" : "Open menu"}
               aria-expanded={open}
               aria-controls="mobile-menu"
               data-testid="burger"
-              onClick={() => setOpen((v) => !v)}
+              onClick={() => toggleMenu(!open)}
             >
               <span></span>
               <span></span>
@@ -102,8 +128,10 @@ export default function Header() {
 
       <div
         id="mobile-menu"
+        ref={menuRef}
         className={`mobile-menu${open ? " open" : ""}`}
         data-testid="mobile-menu"
+        aria-hidden={!open}
       >
         <nav className="mobile-links" aria-label="Mobile">
           {NAV_LINKS.map((l) => (
@@ -123,6 +151,14 @@ export default function Header() {
           </Link>
           <Link className="btn btn-dark" href="/quote" onClick={() => setOpen(false)}>
             Get a quote →
+          </Link>
+          <Link
+            className="btn btn-ghost track"
+            href="/track"
+            data-testid="mobile-track"
+            onClick={() => setOpen(false)}
+          >
+            Track a booking →
           </Link>
         </div>
       </div>

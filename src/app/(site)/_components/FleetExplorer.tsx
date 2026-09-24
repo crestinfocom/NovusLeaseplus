@@ -54,6 +54,7 @@ export default function FleetExplorer() {
           <div className="chips" id="chipRow">
             <button
               className={`chip${cat === "all" ? " active" : ""}`}
+              aria-pressed={cat === "all"}
               onClick={() => setCat("all")}
             >
               All cars
@@ -62,6 +63,7 @@ export default function FleetExplorer() {
               <button
                 key={c}
                 className={`chip${cat === c ? " active" : ""}`}
+                aria-pressed={cat === c}
                 onClick={() => setCat(c)}
               >
                 {c === "MUV" ? "SUV / MUV" : c}
@@ -77,6 +79,7 @@ export default function FleetExplorer() {
                 stroke="currentColor"
                 strokeWidth="2"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.3-4.3" />
@@ -86,11 +89,13 @@ export default function FleetExplorer() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search e.g. creta, diesel, 7 seater"
+                aria-label="Search cars"
               />
             </div>
             <div className="selwrap">
               <select
                 value={fuel}
+                aria-label="Filter by fuel"
                 onChange={(e) => setFuel(e.target.value as Fuel | "all")}
               >
                 <option value="all">All fuels</option>
@@ -103,6 +108,7 @@ export default function FleetExplorer() {
             <div className="selwrap">
               <select
                 value={trans}
+                aria-label="Filter by transmission"
                 onChange={(e) => setTrans(e.target.value as Trans | "all")}
               >
                 <option value="all">All transmissions</option>
@@ -113,6 +119,7 @@ export default function FleetExplorer() {
             <div className="selwrap">
               <select
                 value={sort}
+                aria-label="Sort cars"
                 onChange={(e) => setSort(e.target.value as Sort)}
               >
                 <option value="lowhigh">Price: low → high</option>
@@ -123,7 +130,7 @@ export default function FleetExplorer() {
           </div>
         </div>
         <div className="resultbar">
-          <div className="count">
+          <div className="count" aria-live="polite">
             <b>{list.length}</b> car{list.length !== 1 ? "s" : ""} found
           </div>
           <div style={{ display: "flex", gap: 14, alignItems: "center" }}>

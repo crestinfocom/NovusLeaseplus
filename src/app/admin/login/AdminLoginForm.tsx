@@ -89,6 +89,13 @@ export default function AdminLoginForm() {
         <div className="login-hint">
           Demo credentials — <b>admin@novuslease.in</b> / <b>Nova@admin1</b>
         </div>
+        <Link
+          className="login-back"
+          href="/"
+          data-testid="admin-back-to-site"
+        >
+          ← Back to customer site
+        </Link>
       </div>
     </main>
   );

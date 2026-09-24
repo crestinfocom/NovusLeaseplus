@@ -1,17 +1,40 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import FleetExplorer from "../_components/FleetExplorer";
-import { CARS } from "@/lib/catalog";
+import JsonLd from "../_components/JsonLd";
+import { CARS, carSlug } from "@/lib/catalog";
 
 export const metadata: Metadata = {
   title: "Our Fleet — NovusLease+",
   description:
     "Every car in our fleet. Compare up to 3 side by side, save your favourites, then get a quote on a loan, lease or subscription.",
+  alternates: { canonical: "/fleet" },
+  openGraph: {
+    title: "Our Fleet — NovusLease+",
+    description:
+      "Every car in our fleet. Compare up to 3 side by side, save favourites, get a quote on a loan, lease or subscription.",
+    type: "website",
+    siteName: "NovusLease+",
+    images: ["/images/hero.jpg"],
+  },
 };
 
 export default function FleetPage() {
+  const fleetLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "NovusLease+ fleet",
+    numberOfItems: CARS.length,
+    itemListElement: CARS.map((c, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: c.name,
+      url: `https://novuslease.in/fleet/${carSlug(c.name)}`,
+    })),
+  };
   return (
     <>
+      <JsonLd data={fleetLd} />
       <section className="fhero">
         <div className="fhero-bg">
           {/* eslint-disable-next-line @next/next/no-img-element */}
