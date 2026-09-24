@@ -10,6 +10,13 @@ powers the ⇄ / ♡ actions across all four pages.
 
 The app also ships a full account journey — **login**, **signup for four account types** (individual, corporate, personal driver, commercial driver) and **password reset** — backed by real auth APIs and seeded demo accounts.
 
+Beyond the marketing pages, the product layer adds shareable **vehicle detail pages**
+(`/fleet/<slug>` with JSON-LD + open-graph), a persistent **booking tracker** (`/track`,
+backed by a public lookup API), **fees & charges guidance** on the quote page, an **offline
+banner**, total-cost rows everywhere (36-month totals incl. GST), consistent product
+terminology, and a **robots.txt / sitemap.xml**. A dedicated E2E suite
+(`tests/ux.spec.ts`) guards all of it.
+
 ## Tech stack
 
 - **Next.js 16** — React framework (App Router, Server Components)
@@ -17,7 +24,7 @@ The app also ships a full account journey — **login**, **signup for four accou
 - **Prisma 7** — ORM with a full car-rental domain schema
 - **Neon PostgreSQL** — serverless Postgres, driver adapter `@prisma/adapter-pg`
 - **Google Fonts** — Fraunces (display) + Inter (body), via `next/font`
-- **Playwright** — E2E tests for every marketing page, auth, admin and cross-viewport UI (109 tests)
+- **Playwright** — E2E tests for every marketing page, auth, admin and cross-viewport UI (123 tests)
 
 ## Prerequisites
 
@@ -137,7 +144,11 @@ Login, signup and forgot-password pages live at `/login`, `/signup` and `/forgot
 | Personal Driver | `personaldriver@novuslease.in` | `Nova@pdrive1` |
 | Commercial Driver | `commercialdriver@novuslease.in` | `Nova@cdrive1` |
 
-The login page lists these under a **“Demo accounts”** panel for quick testing.
+The login page lists these under a **“Demo accounts”** panel for quick testing,
+grouped into **Customers** (individual / corporate / personal driver / commercial driver)
+and **Business & operations** (admin, operations). The admin console is clearly split from
+the customer site: `/admin/login` links back to the site, and the admin shell shows a
+“View public site ↗” link.
 
 ### Admin console
 
@@ -175,16 +186,21 @@ src/
   app/
     layout.tsx                # fonts + metadata
     globals.css               # design tokens & component CSS (Tailwind v4)
-    (site)/                   # the four marketing pages (shared chrome + store)
-      layout.tsx              # TopBar + Header + <main> + Footer inside the store provider
+    (site)/                   # marketing + product pages (shared chrome + store)
+      layout.tsx              # skip link + TopBar + Header + OfflineNotice + <main> + Footer
       site.css                # marketing-page CSS ported from the design reference
       page.tsx                # Home ("/"): hero, plans, models, how-it-works, FAQ, CTA
-      fleet/                  # /fleet   → FleetExplorer (search / filter / sort grid)
+      fleet/                  # /fleet → FleetExplorer (search / filter / sort grid)
+      fleet/[slug]/           # /fleet/<slug> → VehicleDetail (SSG per car, JSON-LD Product)
       compare/                # /compare → lease-vs-buy matrix, tax savings, decision guide
-      quote/                  # /quote   → QuoteBuilder (carousel + loan/lease/sub builder)
-      _components/            # TopBar, Header (mobile menu), Footer, Reveal, ModelCard,
-                              #   FleetExplorer, QuoteBuilder
+      quote/                  # /quote → QuoteBuilder + FeesGuide (fees & charges, glossary)
+      track/                  # /track → TrackLookup (status journey by booking reference)
+      _components/            # TopBar, Header (mobile menu), Footer, OfflineNotice, Reveal,
+                              #   ModelCard, FleetExplorer, QuoteBuilder, VehicleDetail,
+                              #   FeesGuide, ShareButtons, JsonLd
+    robots.ts / sitemap.ts    # robots.txt + XML sitemap (static routes + all car slugs)
     api/health/route.ts       # DB connectivity check
+    api/bookings/lookup/      # public GET /api/bookings/lookup?ref= (status + journey)
     api/auth/                 # signup / login / forgot-password APIs
     login/ signup/ forgot-password/     # account pages (each fits a single screen)
     admin/                    # admin console (mirrors Design/NovusLease-plus-admin.html)
@@ -200,6 +216,8 @@ src/
     prisma.ts                 # singleton PrismaClient (Docker or Neon via USE_LOCAL_DB)
     local-sync.ts             # one-way Neon → Docker sync (admin button, rate-limited)
     catalog.ts                # client-side car catalogue + lease/loan/subscription params
+                              #   (carSlug/carBySlug/termTotal helpers)
+    terms.ts                  # single source of truth for plan terminology + labels
     site-store.tsx            # shared compare (max 3) + wishlist store (React context)
     password.ts               # scrypt password hashing / verification
     account-type.ts           # client ⇄ Prisma account-type mapping
@@ -216,6 +234,10 @@ tests/
   ui.spec.ts                  # cross-viewport render checks + screenshots
   admin.spec.ts               # admin login/guard, all six views, seeded rows, logout
   admin-ui.spec.ts            # every admin view at desktop/tablet/mobile (no overflow)
+  ux.spec.ts                  # UX/product-gap suite: skip link, Escape menu, footer track,
+                              #   fleet a11y, offline banner, /track flow + lookup API, vehicle
+                              #   SEO/JSON-LD/term totals, slug 404s, quote totals + sliders,
+                              #   fees guide, customer-vs-business split, compare dialog rows
 ```
 
 ## Scripts
@@ -270,6 +292,7 @@ npx playwright test --headed   # opened Chromium window; F12 opens DevTools
 - `tests/quote.spec.ts` — `/quote` builder, loan/lease/subscription toggles, validation + reference codes, `?car=` prefill, wishlist tab
 - `tests/ui.spec.ts` — renders every public page at desktop/tablet/mobile sizes, asserts no horizontal overflow, saves screenshots to `test-results/ui/`
 - `tests/admin-ui.spec.ts` — renders every admin view at desktop/tablet/mobile sizes, asserts no horizontal overflow (logged in as admin), saves screenshots to `test-results/ui/`
+- `tests/ux.spec.ts` — UX / product-gap suite (see tree above) incl. the public booking-lookup API and vehicle-page SEO
 
 ## Admin console
 
@@ -284,15 +307,29 @@ The four marketing pages port the flows of
   plans, best-selling models, how-it-works steps, FAQ accordion, CTA
 - **Fleet (`/fleet`)** — searchable, filterable (category / fuel / transmission)
   and sortable grid of every car
+- **Vehicle detail (`/fleet/<slug>`)** — shareable per-car pages (breadcrumb,
+  specs, plan estimates with 36-month totals, WhatsApp / X / copy-link share,
+  JSON-LD `Product` + aggregate offer, canonical + open-graph). Links from every
+  model card (`View details`) and the SEO sitemap.
 - **Lease vs Buy (`/compare`)** — comparison matrix, employer-lease tax savings,
   decision guide and FAQ
 - **Get a Quote (`/quote`)** — car picker + loan / lease / subscription builder
-  with live monthly figures, personalised quote and send-for-approval flows
+  with live monthly figures, personalised quote and send-for-approval flows,
+  plus a **Fees & charges guide** and `data-testid="qb-term-total"` totals
+- **Track a booking (`/track`)** — persistent status page + journey timeline for
+  any booking by reference (public `GET /api/bookings/lookup?ref=`), reachable
+  from the header ("Track a booking →") and footer
 - **Compare + wishlist store** — ⇄ adds up to 3 cars to a compare tray, ♡ saves to a
   wishlist; both persist and stay in sync across all four pages
-  (`src/lib/site-store.tsx`)
+  (`src/lib/site-store.tsx`); the compare modal lists 36-month totals per plan
 - **Site footer** — design-identical `.foot-grid` (brand, Explore, Company,
-  Support) + `.foot-bottom`, every link pointing at a real route
+  Business & Operations, Support) + `.foot-terms` glossary (Rental / Lease /
+  Subscription / Loan) + `.foot-bottom`
+- **Offline banner** — dismissible "you're offline" notice while the browser
+  reports no connection (`OfflineNotice.tsx`)
+- **SEO plumbing** — `robots.ts` (disallow `/admin`, `/api`) and `sitemap.ts`
+  (static routes + all 22 car-slug URLs); JSON-LD `Organization`/`FAQPage` on
+  home and `ItemList` on `/fleet`
 
 ## Also included
 
