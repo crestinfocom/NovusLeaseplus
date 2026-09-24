@@ -23,7 +23,7 @@ terminology, and a **robots.txt / sitemap.xml**. A dedicated E2E suite
 - **Tailwind CSS v4** — design tokens + component classes ported from the reference
 - **Prisma 7** — ORM with a full car-rental domain schema
 - **Neon PostgreSQL** — serverless Postgres, driver adapter `@prisma/adapter-pg`
-- **Google Fonts** — Fraunces (display) + Inter (body), via `next/font`
+- **Self-hosted fonts** — Fraunces (display) + Inter (body), loaded via `@font-face` from `/fonts/*.woff2` (no build-time Google Fonts fetch)
 - **Playwright** — E2E tests for every marketing page, auth, admin and cross-viewport UI (123 tests)
 
 ## Prerequisites
