@@ -3,26 +3,25 @@ import { prisma } from "@/lib/prisma";
 import {
   bookingTypeLabel,
   bookingStatusLabel,
+  normalizeBookingReference,
   statusJourney,
 } from "@/lib/terms";
 
 export const dynamic = "force-dynamic";
 
-// Public, read-only lookup by booking reference so customers can check their
-// application / booking status without logging in (UX gap 5).
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const ref = (searchParams.get("ref") ?? "").trim().toUpperCase();
+const LOOKUP_UNAVAILABLE =
+  "Booking lookup is temporarily unavailable. Please try again shortly.";
 
-  if (!ref) {
-    return NextResponse.json(
-      { ok: false, error: "Please enter your booking reference." },
-      { status: 400 }
-    );
-  }
+function json(body: unknown, status: number) {
+  return NextResponse.json(body, {
+    status,
+    headers: { "Cache-Control": "private, no-store" },
+  });
+}
 
-  const booking = await prisma.booking.findUnique({
-    where: { bookingRef: ref },
+async function findBooking(ref: string) {
+  return prisma.booking.findFirst({
+    where: { bookingRef: { equals: ref, mode: "insensitive" } },
     select: {
       bookingRef: true,
       bookingType: true,
@@ -30,46 +29,73 @@ export async function GET(request: Request) {
       startDate: true,
       endDate: true,
       totalAmount: true,
-      baseAmount: true,
       discountAmount: true,
-      createdAt: true,
-      user: { select: { id: true, name: true } },
-      car: { select: { id: true, name: true } },
-      city: { select: { id: true, name: true } },
+      car: { select: { name: true } },
+      city: { select: { name: true } },
     },
   });
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const rawRef = searchParams.get("ref") ?? "";
+
+  if (!rawRef.trim()) {
+    return json(
+      { ok: false, error: "Please enter your booking reference." },
+      400,
+    );
+  }
+
+  const ref = normalizeBookingReference(rawRef);
+  if (!ref) {
+    return json(
+      { ok: false, error: "Enter a valid booking reference." },
+      400,
+    );
+  }
+
+  let booking: Awaited<ReturnType<typeof findBooking>>;
+  try {
+    booking = await findBooking(ref);
+  } catch {
+    return json({ ok: false, error: LOOKUP_UNAVAILABLE }, 503);
+  }
 
   if (!booking) {
-    return NextResponse.json(
-      { ok: false, error: "No booking found with that reference. Check the reference and try again." },
-      { status: 404 }
+    return json(
+      {
+        ok: false,
+        error:
+          "No booking found with that reference. Check the reference and try again.",
+      },
+      404,
     );
   }
 
   const journey = statusJourney(booking.status);
 
-  return NextResponse.json({
-    ok: true,
-    booking: {
-      ref: booking.bookingRef,
-      type: booking.bookingType,
-      typeLabel: bookingTypeLabel(booking.bookingType),
-      status: booking.status,
-      statusLabel: bookingStatusLabel(booking.status),
-      journey: {
-        label: journey.label,
-        steps: journey.steps,
-        isDone: ["COMPLETED", "RETURNED", "CANCELLED"].includes(booking.status),
+  return json(
+    {
+      ok: true,
+      booking: {
+        ref: booking.bookingRef.toUpperCase(),
+        typeLabel: bookingTypeLabel(booking.bookingType),
+        status: booking.status,
+        statusLabel: bookingStatusLabel(booking.status),
+        journey: {
+          ...journey,
+          steps: journey.nextActions,
+          isDone: journey.terminal,
+        },
+        carName: booking.car.name,
+        city: booking.city.name,
+        startDate: booking.startDate.toISOString().slice(0, 10),
+        endDate: booking.endDate.toISOString().slice(0, 10),
+        discountAmount: Number(booking.discountAmount),
+        totalAmount: Number(booking.totalAmount),
       },
-      carName: booking.car.name,
-      city: booking.city.name,
-      startDate: booking.startDate.toISOString().slice(0, 10),
-      endDate: booking.endDate.toISOString().slice(0, 10),
-      baseAmount: Number(booking.baseAmount),
-      discountAmount: Number(booking.discountAmount),
-      totalAmount: Number(booking.totalAmount),
-      customerName: booking.user.name,
-      createdAt: booking.createdAt.toISOString().slice(0, 10),
     },
-  });
+    200,
+  );
 }

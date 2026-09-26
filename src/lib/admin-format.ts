@@ -50,7 +50,7 @@ const BOOKING_PILL: Record<string, string> = {
   CONFIRMED: "active",
   PICKED_UP: "active",
   COMPLETED: "completed",
-  RETURNED: "completed",
+  RETURNED: "active",
   CANCELLED: "cancelled",
 };
 

@@ -2,17 +2,26 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { AccountType } from "@prisma/client";
+import { useRouter } from "next/navigation";
+import type { AccountType, UserRole } from "@prisma/client";
 import { accountTypeLabel } from "@/lib/account-type";
+import { getAdminLoginPath } from "@/lib/auth-redirect";
 
 type LoginResult = {
   ok: true;
   name: string;
   email: string;
+  role: UserRole;
   accountType: AccountType;
+  redirectTo: string;
 };
 
-export default function LoginForm() {
+type LoginFormProps = {
+  next?: string;
+};
+
+export default function LoginForm({ next }: LoginFormProps) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
@@ -22,11 +31,16 @@ export default function LoginForm() {
   const [account, setAccount] = useState<LoginResult | null>(null);
 
   function validate() {
-    const next: { email?: string; password?: string } = {};
-    if (!/^\S+@\S+\.\S+$/.test(email)) next.email = "Enter a valid email address";
-    if (password.length < 6) next.password = "Password must be at least 6 characters";
-    setErrors(next);
-    return Object.keys(next).length === 0;
+    const normalizedEmail = email.trim().toLowerCase();
+    const nextErrors: { email?: string; password?: string } = {};
+    if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) {
+      nextErrors.email = "Enter a valid email address";
+    }
+    if (password.length < 6) {
+      nextErrors.password = "Password must be at least 6 characters";
+    }
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -38,12 +52,22 @@ export default function LoginForm() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+          remember,
+          next,
+        }),
       });
       const data = await res.json();
-      if (!res.ok || !data.ok) {
-        setApiError(data.error ?? "Something went wrong. Please try again.");
+      if (!res.ok || !data?.ok) {
+        setApiError(data?.error ?? "Something went wrong. Please try again.");
         setStatus("idle");
+        return;
+      }
+      if (data.role === "ADMIN") {
+        router.replace(getAdminLoginPath(data.redirectTo));
+        router.refresh();
         return;
       }
       setAccount(data as LoginResult);

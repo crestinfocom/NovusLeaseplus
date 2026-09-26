@@ -3,9 +3,9 @@ import Link from "next/link";
 import TrackLookup from "./TrackLookup";
 
 export const metadata: Metadata = {
-  title: "Track Your Application or Booking — NovusLease+",
+  title: "Track Your Booking — NovusLease+",
   description:
-    "Check the live status of your NovusLease+ application or booking with your 6-character reference — what has happened and exactly what to do next.",
+    "Check the live status of your NovusLease+ booking with your 6-character reference — see completed milestones and your next actions.",
   alternates: { canonical: "/track" },
 };
 
@@ -18,11 +18,11 @@ export default function TrackPage() {
             <Link href="/">Home</Link> &nbsp;/&nbsp; Track booking
           </div>
           <h1>
-            Track your <em>application or booking</em>
+            Track your <em>booking</em>
           </h1>
           <p>
-            Enter your reference to see the live status, what has been completed,
-            and your exact next steps.
+            Enter your booking reference to see its live status, completed
+            milestones, and next actions.
           </p>
         </div>
       </section>

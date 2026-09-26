@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { adminLoginUrl } from "@/lib/auth-redirect";
 
 export default function Footer() {
   return (
@@ -72,7 +73,10 @@ export default function Footer() {
               Fleet, bookings, customers, payments and settings for NovusLease+
               staff and partners — separate from the customer site.
             </p>
-            <Link href="/admin/login" data-testid="footer-business-login">
+            <Link
+              href={adminLoginUrl("/admin/dashboard")}
+              data-testid="footer-business-login"
+            >
               Business login →
             </Link>
             <Link href="/fleet#compare-tray">Partner onboarding</Link>

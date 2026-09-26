@@ -109,7 +109,8 @@ test.describe("UX / product gap work", () => {
     expect(json.booking.ref).toBe("B1042");
     expect(json.booking.typeLabel).toBeTruthy();
     expect(json.booking.statusLabel).toBeTruthy();
-    expect(json.booking.journey.steps.length).toBeGreaterThan(0);
+    expect(json.booking.journey.milestones).toHaveLength(5);
+    expect(json.booking.journey.nextActions.length).toBeGreaterThan(0);
     expect(json.booking.totalAmount).toBeGreaterThan(0);
   });
 
@@ -173,7 +174,7 @@ test.describe("UX / product gap work", () => {
     await expect(page.locator('[data-testid="footer-terms"]')).toContainText("Rental");
   });
 
-  test("customer and business entry points are clearly separated", async ({
+  test("customer and business entry points use the unified login", async ({
     page,
   }) => {
     await page.goto("/");
@@ -181,13 +182,16 @@ test.describe("UX / product gap work", () => {
     await expect(customerLogin).toHaveText("Login");
     const biz = page.locator('[data-testid="footer-business-login"]');
     await expect(biz).toHaveText(/Business login/);
-    await expect(biz).toHaveAttribute("href", "/admin/login");
+    await expect(biz).toHaveAttribute(
+      "href",
+      "/login?next=%2Fadmin%2Fdashboard",
+    );
 
     await page.goto("/admin/login");
-    await expect(page.getByTestId("admin-login")).toBeVisible();
-    const back = page.getByTestId("admin-back-to-site");
-    await expect(back).toHaveText(/Back to customer site/);
-    await expect(back).toHaveAttribute("href", "/");
+    const url = new URL(page.url());
+    expect(url.pathname).toBe("/login");
+    expect(url.searchParams.get("next")).toBe("/admin/dashboard");
+    await expect(page.locator(".auth-card")).toBeVisible();
   });
 
   test("compare modal exposes dialog semantics and term totals", async ({

@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 const PANEL_ROUTES = [
   "/admin",
@@ -10,57 +10,74 @@ const PANEL_ROUTES = [
   "/admin/settings",
 ];
 
+async function expectLoginDestination(page: Page, next: string) {
+  await expect
+    .poll(() => new URL(page.url()).pathname)
+    .toBe("/login");
+  const url = new URL(page.url());
+  expect(url.searchParams.get("next")).toBe(next);
+}
+
+async function loginAsAdmin(page: Page) {
+  await page.goto("/login?next=/admin/dashboard");
+  await page.locator("#email").fill("admin@novuslease.in");
+  await page.locator("#password").fill("Nova@admin1");
+  await page.locator(".auth-submit").click();
+  await expect(page).toHaveURL((url) => url.pathname === "/admin/dashboard");
+  await expect(page.locator(".adm-top h1")).toHaveText("Dashboard");
+}
+
 test.describe("NovusLease+ admin console", () => {
   for (const route of PANEL_ROUTES) {
-    test(`${route} redirects to admin login when signed out`, async ({
+    test(`${route} redirects to the unified login when signed out`, async ({
       page,
     }) => {
       await page.goto(route);
-      await expect(page).toHaveURL(/\/admin\/login$/);
-      await expect(page.locator('[data-testid="admin-login"]')).toBeVisible();
+      await expectLoginDestination(page, route);
+      await expect(page.locator(".auth-card")).toBeVisible();
     });
   }
 
-  test("admin login page renders the design card with hint", async ({ page }) => {
+  test("admin login compatibility URL redirects to the unified form", async ({
+    page,
+  }) => {
     await page.goto("/admin/login");
-    await expect(page.locator('[data-testid="admin-login"]')).toBeVisible();
-    await expect(page.locator(".login-card h2")).toHaveText("Welcome back");
-    await expect(page.locator("#adm-email")).toBeVisible();
-    await expect(page.locator("#adm-password")).toBeVisible();
-    await expect(page.locator(".login-hint")).toContainText("Nova@admin1");
+    await expectLoginDestination(page, "/admin/dashboard");
+    await expect(page.locator(".auth-head h2")).toHaveText("Welcome back");
+    await expect(page.locator("#email")).toBeVisible();
+    await expect(page.locator("#password")).toBeVisible();
+    await expect(page.locator('[data-testid="demo-accounts"]')).toContainText(
+      "Nova@admin1",
+    );
   });
 
-  test("admin login rejects wrong credentials", async ({ page }) => {
-    await page.goto("/admin/login");
-    await page.locator("#adm-email").fill("admin@novuslease.in");
-    await page.locator("#adm-password").fill("wrongpass9");
-    await page.locator(".login-btn").click();
-    await expect(page.locator('[data-testid="admin-login-error"]')).toContainText(
-      "Invalid email or password"
+  test("unified login rejects wrong credentials", async ({ page }) => {
+    await page.goto("/login?next=/admin/dashboard");
+    await page.locator("#email").fill("admin@novuslease.in");
+    await page.locator("#password").fill("wrongpass9");
+    await page.locator(".auth-submit").click();
+    await expect(page.locator(".f-error-block")).toContainText(
+      "Invalid email or password",
     );
   });
 
   test("operations account is blocked from the admin console", async ({
     page,
   }) => {
-    await page.goto("/admin/login");
-    await page.locator("#adm-email").fill("operations@novuslease.in");
-    await page.locator("#adm-password").fill("Nova@ops2024");
-    await page.locator(".login-btn").click();
-    await expect(page.locator('[data-testid="admin-login-error"]')).toContainText(
-      "Admin access required"
+    await page.goto("/login?next=/admin/dashboard");
+    await page.locator("#email").fill("operations@novuslease.in");
+    await page.locator("#password").fill("Nova@ops2024");
+    await page.locator(".auth-submit").click();
+    await expect(page.locator(".f-error-block")).toContainText(
+      "Admin access required",
     );
-    await expect(page).toHaveURL(/\/admin\/login$/);
+    await expectLoginDestination(page, "/admin/dashboard");
   });
 
-  test("admin can navigate to every view and back to dashboard", async ({
+  test("admin can use the shared form and navigate to every view", async ({
     page,
   }) => {
-    await page.goto("/admin/login");
-    await page.locator("#adm-email").fill("admin@novuslease.in");
-    await page.locator("#adm-password").fill("Nova@admin1");
-    await page.locator(".login-btn").click();
-    await expect(page).toHaveURL(/\/admin\/dashboard$/);
+    await loginAsAdmin(page);
 
     const views: [string, string][] = [
       ["dashboard", "Dashboard"],
@@ -78,11 +95,7 @@ test.describe("NovusLease+ admin console", () => {
   });
 
   test("dashboard shows stats, bookings and fleet panels", async ({ page }) => {
-    await page.goto("/admin/login");
-    await page.locator("#adm-email").fill("admin@novuslease.in");
-    await page.locator("#adm-password").fill("Nova@admin1");
-    await page.locator(".login-btn").click();
-    await expect(page).toHaveURL(/\/admin\/dashboard$/);
+    await loginAsAdmin(page);
 
     await expect(page.locator(".stat-grid")).toBeVisible();
     await expect(page.locator('[data-testid="revenue-chart"]')).toBeVisible();
@@ -91,33 +104,27 @@ test.describe("NovusLease+ admin console", () => {
   });
 
   test("bookings and fleet lists render seeded rows", async ({ page }) => {
-    await page.goto("/admin/login");
-    await page.locator("#adm-email").fill("admin@novuslease.in");
-    await page.locator("#adm-password").fill("Nova@admin1");
-    await page.locator(".login-btn").click();
-    await expect(page).toHaveURL(/\/admin\/dashboard$/);
+    await loginAsAdmin(page);
 
     await page.locator('.sb-nav a[href="/admin/bookings"]').click();
     await expect(page.locator('[data-testid="bookings-table"]')).toBeVisible();
     await expect(
-      page.locator('[data-testid="bookings-table"] tbody tr').first()
+      page.locator('[data-testid="bookings-table"] tbody tr').first(),
     ).toContainText("B1");
 
     await page.locator('.sb-nav a[href="/admin/fleet"]').click();
     await expect(page.locator('[data-testid="fleet-table"] tbody tr').first()).toContainText(
-      "Swift"
+      "Swift",
     );
   });
 
-  test("admin signs out and returns to the login page", async ({ page }) => {
-    await page.goto("/admin/login");
-    await page.locator("#adm-email").fill("admin@novuslease.in");
-    await page.locator("#adm-password").fill("Nova@admin1");
-    await page.locator(".login-btn").click();
-    await expect(page).toHaveURL(/\/admin\/dashboard$/);
+  test("admin signs out and returns to the unified login page", async ({
+    page,
+  }) => {
+    await loginAsAdmin(page);
 
     await page.locator('button[aria-label="Sign out"]').click();
-    await expect(page).toHaveURL(/\/admin\/login$/);
-    await expect(page.locator('[data-testid="admin-login"]')).toBeVisible();
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.locator(".auth-card")).toBeVisible();
   });
 });

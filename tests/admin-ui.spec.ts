@@ -16,11 +16,11 @@ const VIEWPORTS: { name: string; width: number; height: number }[] = [
 ];
 
 async function loginAsAdmin(page: import("@playwright/test").Page) {
-  await page.goto("/admin/login");
-  await page.locator("#adm-email").fill("admin@novuslease.in");
-  await page.locator("#adm-password").fill("Nova@admin1");
-  await page.locator(".login-btn").click();
-  await page.waitForURL(/\/admin\/dashboard$/);
+  await page.goto("/login?next=/admin/dashboard");
+  await page.locator("#email").fill("admin@novuslease.in");
+  await page.locator("#password").fill("Nova@admin1");
+  await page.locator(".auth-submit").click();
+  await page.waitForURL((url) => url.pathname === "/admin/dashboard");
   await page.waitForLoadState("networkidle");
 }
 

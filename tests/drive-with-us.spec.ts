@@ -19,7 +19,7 @@ test.describe("Drive With Us page", () => {
 
   test("program rules and journey steps are present", async ({ page }) => {
     await expect(page.locator("#model .p3")).toHaveCount(6);
-    await expect(page.locator("#model")).toContainText("₦20,000–₦40,000");
+    await expect(page.locator("#model")).toContainText("₹20,000–₹40,000");
     await expect(page.locator("#model")).toContainText("Daily / weekly repayment");
     const steps = page.locator("#how .step");
     await expect(steps).toHaveCount(6);
@@ -43,8 +43,23 @@ test.describe("Drive With Us page", () => {
   });
 
   test("vehicle categories section links to the fleet", async ({ page }) => {
-    await expect(page.locator("#vehicles .dwu-veh")).toHaveCount(4);
+    const vehicles = page.locator("#vehicles .dwu-veh");
+    await expect(vehicles).toHaveCount(4);
+    await expect(vehicles.nth(0)).toContainText("from ₹25 lakh");
+    await expect(vehicles.nth(1)).toContainText("from ₹45 lakh");
+    await expect(vehicles.nth(2)).toContainText("from ₹65 lakh");
+    await expect(vehicles.nth(3)).toContainText("from ₹85 lakh");
     await expect(page.locator("#vehicles a[href='/fleet']").first()).toBeVisible();
+  });
+
+  test("uses Indian rupees throughout the page and calculator", async ({ page }) => {
+    const pageText = await page.locator("body").innerText();
+    const calculator = page.locator('[data-testid="drive-calculator"]');
+    const calculatorText = await calculator.innerText();
+    expect(pageText).toContain("₹20,000–₹40,000");
+    expect(pageText).not.toContain("₦");
+    expect(calculatorText).toContain("₹15,00,000");
+    expect(calculatorText).not.toContain("₦");
   });
 
   test("eligibility and documents cards", async ({ page }) => {

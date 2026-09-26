@@ -7,12 +7,12 @@ import DriveCalculator from "../_components/DriveCalculator";
 export const metadata: Metadata = {
   title: "Drive With Us — Commercial Vehicle Lease Program | NovusLease+",
   description:
-    "Partner with NovusLease+. Select an eligible commercial vehicle, pay an initial down payment (₦20,000–₦40,000), sign the lease, complete trips, earn commissions and contribute daily or weekly toward your repayment.",
+    "Partner with NovusLease+. Select an eligible commercial vehicle, pay an initial down payment (₹20,000–₹40,000), sign the lease, complete trips, earn commissions and contribute daily or weekly toward your repayment.",
   alternates: { canonical: "/drive-with-us" },
   openGraph: {
     title: "Drive With Us — Commercial Vehicle Lease Program",
     description:
-      "Select an eligible commercial vehicle, pay a ₦20,000–₦40,000 initial down payment, sign a 36-month lease, complete trips and earn commissions.",
+      "Select an eligible commercial vehicle, pay a ₹20,000–₹40,000 initial down payment, sign a 36-month lease, complete trips and earn commissions.",
     type: "website",
     siteName: "NovusLease+",
     images: ["/images/hero.jpg"],
@@ -28,7 +28,7 @@ const STEPS = [
   {
     n: "02",
     t: "Pay your down payment",
-    d: "Initial down payment in the ₦20,000–₦40,000 range, configurable by vehicle.",
+    d: "Initial down payment in the ₹20,000–₹40,000 range, configurable by vehicle.",
   },
   {
     n: "03",
@@ -60,7 +60,7 @@ const RULES = [
   },
   {
     ic: "💰",
-    t: "₦20,000–₦40,000 down",
+    t: "₹20,000–₹40,000 down",
     d: "Initial down payment target range, configurable by vehicle and category.",
   },
   {
@@ -90,28 +90,28 @@ const VEHICLE_CATS = [
     ic: "🚗",
     name: "Hatchback",
     desc: "Compact city runs, last-mile delivery and small cargo.",
-    price: "from ₦2.5m",
+    price: "from ₹25 lakh",
     img: "/images/swift.jpg",
   },
   {
     ic: "🚙",
     name: "SUV",
     desc: "Standard ride-hailing, logistics and intercity trips.",
-    price: "from ₦4.5m",
+    price: "from ₹45 lakh",
     img: "/images/suv.jpg",
   },
   {
     ic: "🚐",
     name: "MUV",
     desc: "7-seater shared rides, taxis, school and crew runs.",
-    price: "from ₦6.5m",
+    price: "from ₹65 lakh",
     img: "/images/hero.jpg",
   },
   {
     ic: "⚡",
     name: "Electric",
     desc: "Low-running-cost commercial city trips.",
-    price: "from ₦8.5m",
+    price: "from ₹85 lakh",
     img: "/images/creta.jpg",
   },
 ];
@@ -141,7 +141,7 @@ const FAQS = [
   },
   {
     q: "How much is the initial down payment?",
-    a: "The target range is ₦20,000–₦40,000 and is configurable by vehicle and category. The exact figure for your vehicle is confirmed in your lease offer.",
+    a: "The target range is ₹20,000–₹40,000 and is configurable by vehicle and category. The exact figure for your vehicle is confirmed in your lease offer.",
   },
   {
     q: "How long is the lease?",
@@ -175,7 +175,7 @@ const LD = {
         url: "https://novuslease.in",
       },
       description:
-        "Select an eligible commercial vehicle, pay an initial down payment of ₦20,000–₦40,000, sign a 36-month lease, complete trips, earn commissions and contribute daily or weekly toward your repayment.",
+        "Select an eligible commercial vehicle, pay an initial down payment of ₹20,000–₹40,000, sign a 36-month lease, complete trips, earn commissions and contribute daily or weekly toward your repayment.",
     },
     {
       "@type": "FAQPage",
@@ -208,7 +208,7 @@ export default function DriveWithUsPage() {
           </h1>
           <p>
             Select an eligible commercial vehicle, pay an initial down payment of{" "}
-            ₦20,000–₦40,000, sign your lease, receive the vehicle and start
+            ₹20,000–₹40,000, sign your lease, receive the vehicle and start
             completing trips. Your commissions fund a configured daily / weekly
             lease contribution — with full transparency on every trip, earning
             and balance.
@@ -240,7 +240,7 @@ export default function DriveWithUsPage() {
           <div className="dwu-stats">
             <Reveal className="usp-item">
               <div className="ic">💰</div>
-              <h4>₦20,000–₦40,000</h4>
+              <h4>₹20,000–₹40,000</h4>
               <p>Initial down-payment range, configurable by vehicle.</p>
             </Reveal>
             <Reveal className="usp-item" delay={1}>

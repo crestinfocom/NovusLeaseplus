@@ -10,30 +10,30 @@ import {
   toDateInput,
 } from "@/lib/admin-format";
 import { pushToast } from "@/lib/toast-bus";
-import { bookingTypeLabel } from "@/lib/terms";
+import {
+  BOOKING_STATUSES,
+  bookingStatusLabel,
+  bookingTypeLabel,
+  type BookingStatus,
+} from "@/lib/terms";
 import type { BookingRow, MetaData } from "../admin-types";
 
 type Filter = "all" | "active" | "pending" | "completed" | "cancelled";
 
 const STATUS_GROUPS: Record<Exclude<Filter, "all">, string[]> = {
-  active: ["CONFIRMED", "PICKED_UP"],
+  active: ["CONFIRMED", "PICKED_UP", "RETURNED"],
   pending: ["PENDING"],
-  completed: ["COMPLETED", "RETURNED"],
+  completed: ["COMPLETED"],
   cancelled: ["CANCELLED"],
 };
 
-const STATUSES = [
-  "PENDING",
-  "CONFIRMED",
-  "COMPLETED",
-  "CANCELLED",
-] as const;
+const STATUSES = BOOKING_STATUSES;
 
 type FormState = {
   userId: string;
   carId: string;
   bookingType: string;
-  status: string;
+  status: BookingStatus;
   startDate: string;
   endDate: string;
   amount: string;
@@ -114,8 +114,8 @@ export default function BookingsView() {
       userId: b.user.id,
       carId: b.car.id,
       bookingType: b.bookingType,
-      status: STATUSES.includes(b.status as (typeof STATUSES)[number])
-        ? b.status
+      status: STATUSES.includes(b.status as BookingStatus)
+        ? (b.status as BookingStatus)
         : "PENDING",
       startDate: toDateInput(b.startDate),
       endDate: toDateInput(b.endDate),
@@ -129,6 +129,16 @@ export default function BookingsView() {
     setError("");
     if (!form.userId || !form.carId || !form.startDate || !form.endDate) {
       setError("Please pick a customer, car, start and end date.");
+      return;
+    }
+    const startDate = new Date(`${form.startDate}T00:00:00`);
+    const endDate = new Date(`${form.endDate}T00:00:00`);
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      setError("Enter valid start and end dates.");
+      return;
+    }
+    if (endDate <= startDate) {
+      setError("End date must be after start date.");
       return;
     }
     setSaving(true);
@@ -259,7 +269,7 @@ export default function BookingsView() {
                   <td className="cell-main">{inr(b.totalAmount)}</td>
                   <td>
                     <span className={`pill ${bookingPill(b.status)}`}>
-                      {bookingPill(b.status)}
+                      {bookingStatusLabel(b.status)}
                     </span>
                   </td>
                   <td>
@@ -346,11 +356,13 @@ export default function BookingsView() {
             <select
               id="bk-status"
               value={form.status}
-              onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, status: e.target.value as BookingStatus }))
+              }
             >
               {STATUSES.map((s) => (
                 <option key={s} value={s}>
-                  {s.charAt(0) + s.slice(1).toLowerCase()}
+                  {bookingStatusLabel(s)}
                 </option>
               ))}
             </select>
@@ -360,6 +372,7 @@ export default function BookingsView() {
             <input
               id="bk-start"
               type="date"
+              required
               value={form.startDate}
               onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))}
             />
@@ -369,6 +382,7 @@ export default function BookingsView() {
             <input
               id="bk-end"
               type="date"
+              required
               value={form.endDate}
               onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
             />

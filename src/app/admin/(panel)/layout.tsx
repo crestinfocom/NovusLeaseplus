@@ -1,8 +1,7 @@
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import "../admin.css";
 import { getAdminSession } from "@/lib/admin-auth";
-import AdminShell from "./AdminShell";
+import AdminShell, { AdminLoginRedirect } from "./AdminShell";
 
 export const metadata: Metadata = {
   title: {
@@ -17,8 +16,8 @@ export default async function AdminPanelLayout({
   children: React.ReactNode;
 }) {
   const session = await getAdminSession();
-  if (!session) {
-    redirect("/admin/login");
+  if (!session || session.role !== "ADMIN") {
+    return <AdminLoginRedirect />;
   }
   return <AdminShell session={session}>{children}</AdminShell>;
 }

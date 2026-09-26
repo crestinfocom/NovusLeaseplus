@@ -3,10 +3,8 @@ import { cookies } from "next/headers";
 import type { UserRole } from "@prisma/client";
 
 const COOKIE_NAME = "nl_admin";
-const MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+const MAX_AGE = 60 * 60 * 24 * 7;
 
-// AUTH_SECRET signs the admin session cookie. A dev fallback keeps the
-// portal runnable out-of-the-box; set AUTH_SECRET in production.
 const SECRET =
   process.env.AUTH_SECRET ?? "nl-dev-insecure-secret-manager-7f2a";
 
@@ -15,6 +13,7 @@ export type AdminSession = {
   name: string;
   email: string;
   role: UserRole;
+  expiresAt?: number;
 };
 
 function sign(payload: string): string {
@@ -38,12 +37,30 @@ export function decodeSession(value: string | undefined): AdminSession | null {
   }
   try {
     const parsed = JSON.parse(
-      Buffer.from(payload, "base64url").toString("utf8")
-    ) as AdminSession;
-    return parsed.id && parsed.email ? parsed : null;
+      Buffer.from(payload, "base64url").toString("utf8"),
+    ) as Partial<AdminSession>;
+    if (!parsed.id || !parsed.email) return null;
+    if (
+      parsed.expiresAt !== undefined &&
+      (typeof parsed.expiresAt !== "number" ||
+        !Number.isFinite(parsed.expiresAt) ||
+        parsed.expiresAt <= Date.now())
+    ) {
+      return null;
+    }
+    return parsed as AdminSession;
   } catch {
     return null;
   }
+}
+
+export function createSession(
+  user: Pick<AdminSession, "id" | "name" | "email" | "role">,
+): AdminSession {
+  return {
+    ...user,
+    expiresAt: Date.now() + MAX_AGE * 1000,
+  };
 }
 
 export async function getAdminSession(): Promise<AdminSession | null> {
@@ -56,22 +73,17 @@ type AdminCookieOptions = {
   sameSite: "lax";
   secure: boolean;
   path: string;
-  maxAge: number;
+  maxAge?: number;
 };
 
-let cookieOptions: AdminCookieOptions | undefined;
-
-export function adminCookieOptions(): AdminCookieOptions {
-  if (!cookieOptions) {
-    cookieOptions = {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: MAX_AGE,
-    };
-  }
-  return cookieOptions;
+export function adminCookieOptions(remember = true): AdminCookieOptions {
+  const options: AdminCookieOptions = {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+  };
+  return remember ? { ...options, maxAge: MAX_AGE } : options;
 }
 
 export function adminCookieName() {

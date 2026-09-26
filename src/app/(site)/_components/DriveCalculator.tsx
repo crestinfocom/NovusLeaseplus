@@ -1,15 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { inr } from "@/lib/catalog";
 
 const FREQ = ["daily", "weekly"] as const;
 type Freq = (typeof FREQ)[number];
 const TENURES = [36, 48, 60] as const;
 type Tenure = (typeof TENURES)[number];
-
-function ngn(n: number): string {
-  return "₦" + Math.round(n).toLocaleString("en-NG");
-}
 
 function Ctrl({
   label,
@@ -117,7 +114,7 @@ export default function DriveCalculator() {
             max={8000000}
             step={100000}
             value={price}
-            display={ngn(price)}
+            display={inr(price)}
             onChange={setPrice}
           />
           <Ctrl
@@ -126,9 +123,9 @@ export default function DriveCalculator() {
             max={40000}
             step={1000}
             value={down}
-            display={ngn(down)}
+            display={inr(down)}
             onChange={setDown}
-            hint="Target range ₦20,000–₦40,000, configurable by vehicle / category."
+            hint="Target range ₹20,000–₹40,000, configurable by vehicle / category."
           />
           <div className="ctrl">
             <div className="lbl">
@@ -213,7 +210,7 @@ export default function DriveCalculator() {
             max={15000}
             step={250}
             value={fare}
-            display={ngn(fare)}
+            display={inr(fare)}
             onChange={setFare}
           />
           <Ctrl
@@ -241,33 +238,33 @@ export default function DriveCalculator() {
           <div className="dwu-qtotal" data-testid="calc-contribution">
             <span className="l">Est. lease contribution</span>
             <span className="v">
-              {ngn(est.contribPerPeriod)}
+              {inr(est.contribPerPeriod)}
               <small> per {periodLabel}</small>
             </span>
             <span className="s">
-              ≈ {ngn(est.contribPerMonth)} per month on a {tenure}-month schedule
+              ≈ {inr(est.contribPerMonth)} per month on a {tenure}-month schedule
             </span>
           </div>
 
           <div className="dwu-stat-grid">
             <Stat
               l={`Est. gross revenue / ${periodLabel}`}
-              v={ngn(est.grossPerPeriod)}
+              v={inr(est.grossPerPeriod)}
             />
             <Stat
               l={`Est. driver commission / ${periodLabel}`}
-              v={ngn(est.commPerPeriod)}
+              v={inr(est.commPerPeriod)}
             />
             <Stat
               l={`Est. net take-home / ${periodLabel}`}
-              v={ngn(est.netPerPeriod)}
+              v={inr(est.netPerPeriod)}
             />
           </div>
 
           <ul className="brk">
             <li>
               <span>Amount financed</span>
-              <b>{ngn(est.financed)}</b>
+              <b>{inr(est.financed)}</b>
             </li>
             <li>
               <span>
@@ -276,7 +273,7 @@ export default function DriveCalculator() {
                   incl. {rate}% p.a. finance charge
                 </small>
               </span>
-              <b>{ngn(est.totalPayable)}</b>
+              <b>{inr(est.totalPayable)}</b>
             </li>
             <li>
               <span>Est. repayment period</span>
@@ -284,11 +281,11 @@ export default function DriveCalculator() {
             </li>
             <li>
               <span>Est. driver commission over {tenure} months</span>
-              <b>{ngn(est.commPerMonth * tenure)}</b>
+              <b>{inr(est.commPerMonth * tenure)}</b>
             </li>
             <li className="own">
               <span>Est. lease contribution over {tenure} months</span>
-              <b>{ngn(est.contribPerMonth * tenure)}</b>
+              <b>{inr(est.contribPerMonth * tenure)}</b>
             </li>
           </ul>
 
