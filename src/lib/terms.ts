@@ -57,85 +57,150 @@ export function bookingTypeLabel(t: string): string {
   return BOOKING_TYPE_LABELS[t] ?? t;
 }
 
-export const BOOKING_STATUS_LABELS: Record<string, string> = {
+export const BOOKING_STATUSES = [
+  "PENDING",
+  "CONFIRMED",
+  "PICKED_UP",
+  "RETURNED",
+  "COMPLETED",
+  "CANCELLED",
+] as const;
+
+export type BookingStatus = (typeof BOOKING_STATUSES)[number];
+
+export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
   PENDING: "Pending confirmation",
   CONFIRMED: "Confirmed",
   PICKED_UP: "On the road",
-  COMPLETED: "Completed",
   RETURNED: "Returned",
+  COMPLETED: "Completed",
   CANCELLED: "Cancelled",
 };
 
 export function bookingStatusLabel(s: string): string {
-  return BOOKING_STATUS_LABELS[s] ?? s;
+  return BOOKING_STATUS_LABELS[s as BookingStatus] ?? s;
 }
 
-// Persistent booking/application status with actionable next steps (UX gap 5).
+export const BOOKING_REFERENCE_PATTERN = /^B[A-Z0-9]{4,6}$/;
+
+export function normalizeBookingReference(value: string): string | null {
+  const normalized = value.trim().toUpperCase();
+  return BOOKING_REFERENCE_PATTERN.test(normalized) ? normalized : null;
+}
+
+export type JourneyMilestoneState =
+  | "completed"
+  | "current"
+  | "upcoming"
+  | "cancelled";
+
+export interface JourneyMilestone {
+  id: string;
+  label: string;
+  state: JourneyMilestoneState;
+}
+
 export interface StatusJourney {
   label: string;
-  steps: string[];
+  milestones: JourneyMilestone[];
+  nextActions: string[];
+  terminal: boolean;
 }
 
-export const STATUS_JOURNEY: Record<string, StatusJourney> = {
-  PENDING: {
-    label: "Awaiting confirmation",
-    steps: [
-      "Complete your KYC and upload your supporting documents",
-      "Review and e-sign the agreement",
-      "Pay the token advance to lock the car",
-      "Our team confirms within 24 hours",
+const JOURNEY_MILESTONES = [
+  { id: "received", label: "Booking received" },
+  { id: "confirmed", label: "Booking confirmed" },
+  { id: "picked-up", label: "Vehicle picked up" },
+  { id: "returned", label: "Vehicle returned" },
+  { id: "completed", label: "Booking completed" },
+] as const;
+
+function buildJourney(
+  label: string,
+  states: JourneyMilestoneState[],
+  nextActions: string[],
+  terminal = false,
+): StatusJourney {
+  return {
+    label,
+    milestones: JOURNEY_MILESTONES.map((milestone, index) => ({
+      ...milestone,
+      state: states[index] ?? "upcoming",
+    })),
+    nextActions,
+    terminal,
+  };
+}
+
+export const STATUS_JOURNEY: Record<BookingStatus, StatusJourney> = {
+  PENDING: buildJourney(
+    "Awaiting confirmation",
+    ["completed", "current", "upcoming", "upcoming", "upcoming"],
+    [
+      "Keep your booking details ready for confirmation.",
+      "Our team will confirm your booking within 24 hours.",
     ],
-  },
-  CONFIRMED: {
-    label: "Locked in & confirmed",
-    steps: [
-      "Download your signed agreement",
-      "Pay the security deposit to reserve the vehicle",
-      "Pick a delivery slot or pickup location",
-      "The car is allocated to you for the full period",
+  ),
+  CONFIRMED: buildJourney(
+    "Locked in & confirmed",
+    ["completed", "completed", "current", "upcoming", "upcoming"],
+    [
+      "Review your confirmed dates and pickup details.",
+      "Choose a pickup slot and location.",
+      "Bring your booking reference and required documents.",
     ],
-  },
-  PICKED_UP: {
-    label: "On the road with you",
-    steps: [
-      "Review the handover checklist and odometer photo",
-      "Follow bundled insurance, maintenance and RSA cover",
-      "Report any incident within 24 hours on 24×7 support",
+  ),
+  PICKED_UP: buildJourney(
+    "On the road with you",
+    ["completed", "completed", "completed", "current", "upcoming"],
+    [
+      "Review the handover checklist and confirm the odometer reading.",
+      "Use the bundled support for any incident during the journey.",
+      "Contact support if your plans change.",
     ],
-  },
-  RETURNED: {
-    label: "Returned — closing out",
-    steps: [
-      "Final inspection and odometer/fuel check",
-      "Refundable deposit is processed after dues are settled",
-      "Rate your journey — feedback closes the loop",
+  ),
+  RETURNED: buildJourney(
+    "Returned — closing out",
+    ["completed", "completed", "completed", "completed", "current"],
+    [
+      "Complete the final inspection and odometer/fuel check.",
+      "Settle any final dues before the deposit is processed.",
+      "Share feedback about your booking.",
     ],
-  },
-  COMPLETED: {
-    label: "Completed",
-    steps: [
-      "Download your invoice and payment history",
-      "Renew, extend or start a fresh quote",
-      "Refer a friend to earn partner rewards",
-    ],
-  },
-  CANCELLED: {
-    label: "Cancelled",
-    steps: [
-      "No further amount is collected",
-      "Start a new quote to rebook any car",
-      "Contact support if a refund is due to you",
-    ],
-  },
+  ),
+  COMPLETED: buildJourney(
+    "Completed",
+    ["completed", "completed", "completed", "completed", "completed"],
+    [],
+    true,
+  ),
+  CANCELLED: buildJourney(
+    "Cancelled",
+    ["completed", "cancelled", "cancelled", "cancelled", "cancelled"],
+    [],
+    true,
+  ),
 };
 
 export function statusJourney(status: string): StatusJourney {
-  return (
-    STATUS_JOURNEY[status] ?? {
-      label: bookingStatusLabel(status),
-      steps: ["Contact our 24×7 support team for the latest update."],
-    }
-  );
+  const known = STATUS_JOURNEY[status as BookingStatus];
+  if (known) {
+    return {
+      ...known,
+      milestones: known.milestones.map((milestone) => ({ ...milestone })),
+      nextActions: [...known.nextActions],
+    };
+  }
+
+  return {
+    label: bookingStatusLabel(status),
+    milestones: JOURNEY_MILESTONES.map((milestone, index) => ({
+      ...milestone,
+      state: index === 0 ? "current" : "upcoming",
+    })),
+    nextActions: ["Contact our 24×7 support team for the latest update."],
+    terminal: false,
+  };
 }
 
 // Fees & charges explained — the exact items flagged in the UX review.

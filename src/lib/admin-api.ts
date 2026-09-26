@@ -9,6 +9,15 @@ export async function requireAdmin(): Promise<AdminSession | NextResponse> {
       { status: 401 }
     );
   }
+  if (session.role !== "ADMIN") {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "Admin access required. This account cannot open the console.",
+      },
+      { status: 403 }
+    );
+  }
   return session;
 }
 

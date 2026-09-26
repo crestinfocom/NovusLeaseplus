@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { adminLoginUrl } from "@/lib/auth-redirect";
 import { ToastHost } from "@/lib/toast-bus";
 import { emitAdminSearch } from "@/lib/search-bus";
 
@@ -53,6 +54,15 @@ function titleFor(path: string): [string, string] {
   return TITLES[seg] ?? TITLES.dashboard;
 }
 
+export function AdminLoginRedirect() {
+  const pathname = usePathname();
+  const router = useRouter();
+  useEffect(() => {
+    router.replace(adminLoginUrl(pathname));
+  }, [pathname, router]);
+  return null;
+}
+
 export default function AdminShell({
   session,
   children,
@@ -98,7 +108,7 @@ export default function AdminShell({
     try {
       await fetch("/api/admin/logout", { method: "POST" });
     } finally {
-      router.push("/admin/login");
+      router.push("/login");
       router.refresh();
     }
   }

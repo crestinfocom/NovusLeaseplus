@@ -35,12 +35,25 @@ test.describe("NovusLease+ account auth pages", () => {
 
   test("login accepts the seeded individual account", async ({ page }) => {
     await page.goto("/login");
-    await page.locator("#email").fill("individual@novuslease.in");
+    await page.locator("#email").fill("  INDIVIDUAL@NOVUSLEASE.IN  ");
     await page.locator("#password").fill("Nova@user1");
     await page.locator(".auth-submit").click();
     await expect(page.locator(".auth-success")).toBeVisible();
     await expect(page.locator(".auth-success")).toContainText("Welcome back");
     await expect(page.locator(".auth-success")).toContainText("Individual");
+    await expect(page.locator(".auth-success-email")).toHaveText(
+      "individual@novuslease.in",
+    );
+    await expect(page).toHaveURL(/\/login$/);
+  });
+
+  test("admin can use the unified login form", async ({ page }) => {
+    await page.goto("/login?next=/admin/dashboard");
+    await page.locator("#email").fill("admin@novuslease.in");
+    await page.locator("#password").fill("Nova@admin1");
+    await page.locator(".auth-submit").click();
+    await expect(page).toHaveURL((url) => url.pathname === "/admin/dashboard");
+    await expect(page.locator(".adm-top h1")).toHaveText("Dashboard");
   });
 
   test("login works for every seeded demo account type", async ({ page }) => {

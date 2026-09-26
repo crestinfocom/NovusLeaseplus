@@ -45,6 +45,14 @@ const StoreCtx = createContext<Store | null>(null);
 
 const KC = "nl_compare";
 const KW = "nl_wish";
+const DIALOG_FOCUSABLE =
+  'a[href],area[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),summary,[contenteditable="true"],[tabindex]:not([tabindex="-1"])';
+
+function dialogFocusable(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>(DIALOG_FOCUSABLE)).filter(
+    (element) => element.tabIndex >= 0 && element.getClientRects().length > 0
+  );
+}
 
 function load(k: string): Car[] {
   if (typeof window === "undefined") return [];
@@ -486,9 +494,57 @@ function CompareModal() {
   const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (modalOpen) {
-      modalRef.current?.querySelector<HTMLElement>("#cmpX")?.focus();
-    }
+    if (!modalOpen) return;
+    const previousFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    modalRef.current?.querySelector<HTMLElement>("#cmpX")?.focus();
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeCompare();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const modal = modalRef.current;
+      if (!modal) return;
+      const focusable = dialogFocusable(modal);
+      if (!focusable.length) {
+        e.preventDefault();
+        modal.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !modal.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !modal.contains(active))) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", onKey, true);
+    return () => {
+      document.removeEventListener("keydown", onKey, true);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [modalOpen, closeCompare]);
+
+  useEffect(() => {
+    if (!modalOpen) return;
+    const body = document.body;
+    const previousOverflow = body.style.overflow;
+    const previousOverflowX = body.style.overflowX;
+    const previousOverflowY = body.style.overflowY;
+    body.style.overflow = "hidden";
+    return () => {
+      body.style.overflow = previousOverflow;
+      body.style.overflowX = previousOverflowX;
+      body.style.overflowY = previousOverflowY;
+    };
   }, [modalOpen]);
 
   if (!modalOpen) return null;
@@ -518,7 +574,6 @@ function CompareModal() {
     <div
       className="mback"
       id="cmpBack"
-      style={{ display: "flex" }}
       onClick={(e) => e.target === e.currentTarget && closeCompare()}
     >
       <div
@@ -527,6 +582,7 @@ function CompareModal() {
         role="dialog"
         aria-modal="true"
         aria-label="Compare cars"
+        tabIndex={-1}
       >
         <div
           style={{

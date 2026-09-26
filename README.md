@@ -329,7 +329,7 @@ The four marketing pages port the flows of
   from the header ("Track a booking →") and footer
 - **Drive With Us (`/drive-with-us`)** — commercial vehicle lease program landing
   page for drivers/partners. It walks the core model — select an eligible
-  commercial vehicle → pay an initial down payment (₦20,000–₦40,000) → sign a
+  commercial vehicle → pay an initial down payment (₹20,000–₹40,000) → sign a
   36-month lease → receive the vehicle → complete trips → earn commissions →
   contribute on a configured daily/weekly model. Includes configurable program
   rules, an indicative lease & earnings estimator (`DriveCalculator`, clearly

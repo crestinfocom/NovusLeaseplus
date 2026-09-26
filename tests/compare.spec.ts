@@ -1,4 +1,17 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+
+async function openCompareDialog(page: Page) {
+  await page.evaluate(() => window.localStorage.removeItem("nl_compare"));
+  await page.goto("/fleet");
+  await page.locator(".model").first().locator(".icobtn.cmp").click();
+  await expect(page.locator("#cmptray")).toBeVisible();
+  const trigger = page.locator('[data-testid="header-compare"]');
+  await trigger.click();
+  const backdrop = page.locator("#cmpBack");
+  const dialog = page.locator(".cmp-modal");
+  await expect(dialog).toBeVisible();
+  return { backdrop, dialog, trigger };
+}
 
 test.describe("Lease vs Buy (compare) page", () => {
   test.beforeEach(async ({ page }) => {
@@ -57,5 +70,117 @@ test.describe("Lease vs Buy (compare) page", () => {
     await cta.locator("a").first().click();
     await page.waitForURL("**/quote");
     await expect(page.locator('[data-testid="quote-builder"]')).toBeVisible();
+  });
+
+  test("covers the viewport with a centered compare panel", async ({ page }) => {
+    const viewport = page.viewportSize();
+    expect(viewport).not.toBeNull();
+    if (!viewport) return;
+    const { backdrop, dialog } = await openCompareDialog(page);
+    const backdropBox = await backdrop.boundingBox();
+    const dialogBox = await dialog.boundingBox();
+    expect(backdropBox).not.toBeNull();
+    expect(dialogBox).not.toBeNull();
+    if (!backdropBox || !dialogBox) return;
+
+    expect(Math.abs(backdropBox.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(backdropBox.y)).toBeLessThanOrEqual(1);
+    expect(Math.abs(backdropBox.width - viewport.width)).toBeLessThanOrEqual(1);
+    expect(Math.abs(backdropBox.height - viewport.height)).toBeLessThanOrEqual(1);
+    expect(dialogBox.x).toBeGreaterThanOrEqual(0);
+    expect(dialogBox.y).toBeGreaterThanOrEqual(0);
+    expect(dialogBox.x + dialogBox.width).toBeLessThanOrEqual(viewport.width);
+    expect(dialogBox.y + dialogBox.height).toBeLessThanOrEqual(viewport.height);
+    expect(Math.abs(dialogBox.x + dialogBox.width / 2 - viewport.width / 2)).toBeLessThanOrEqual(2);
+    expect(Math.abs(dialogBox.y + dialogBox.height / 2 - viewport.height / 2)).toBeLessThanOrEqual(2);
+
+    const styles = await backdrop.evaluate((element) => {
+      const computed = getComputedStyle(element);
+      return {
+        position: computed.position,
+        display: computed.display,
+        zIndex: computed.zIndex,
+        backgroundColor: computed.backgroundColor,
+      };
+    });
+    const panelStyles = await dialog.evaluate((element) => {
+      const computed = getComputedStyle(element);
+      return {
+        backgroundColor: computed.backgroundColor,
+        borderRadius: computed.borderRadius,
+        boxShadow: computed.boxShadow,
+      };
+    });
+    expect(styles.position).toBe("fixed");
+    expect(styles.display).toBe("flex");
+    expect(Number(styles.zIndex)).toBeGreaterThan(99);
+    expect(styles.backgroundColor).not.toBe("transparent");
+    expect(panelStyles.backgroundColor).not.toBe("transparent");
+    expect(panelStyles.borderRadius).not.toBe("0px");
+    expect(panelStyles.boxShadow).not.toBe("none");
+    await expect(dialog).toHaveAttribute("role", "dialog");
+    await expect(dialog).toHaveAttribute("aria-modal", "true");
+  });
+
+  test("keeps the compare panel contained on mobile", async ({ page }) => {
+    const viewport = { width: 390, height: 844 };
+    await page.setViewportSize(viewport);
+    const { dialog } = await openCompareDialog(page);
+    const dialogBox = await dialog.boundingBox();
+    expect(dialogBox).not.toBeNull();
+    if (!dialogBox) return;
+
+    expect(dialogBox.x).toBeGreaterThanOrEqual(0);
+    expect(dialogBox.y).toBeGreaterThanOrEqual(0);
+    expect(dialogBox.x + dialogBox.width).toBeLessThanOrEqual(viewport.width);
+    expect(dialogBox.y + dialogBox.height).toBeLessThanOrEqual(viewport.height);
+    expect(dialogBox.width).toBeLessThanOrEqual(viewport.width);
+    expect(dialogBox.height).toBeLessThanOrEqual(viewport.height);
+
+    const overflowStyles = await dialog.evaluate((element) => {
+      const wrap = element.querySelector<HTMLElement>(".cmp-tbl-wrap");
+      return {
+        overflow: getComputedStyle(element).overflow,
+        tableOverflowX: wrap ? getComputedStyle(wrap).overflowX : "",
+      };
+    });
+    expect(overflowStyles.overflow).toBe("hidden");
+    expect(overflowStyles.tableOverflowX).toBe("auto");
+  });
+
+  test("closes the compare dialog with Escape and the backdrop", async ({ page }) => {
+    const first = await openCompareDialog(page);
+    await page.keyboard.press("Escape");
+    await expect(first.dialog).toHaveCount(0);
+    await expect(first.backdrop).toHaveCount(0);
+
+    const second = await openCompareDialog(page);
+    await second.backdrop.click({ position: { x: 1, y: 1 } });
+    await expect(second.dialog).toHaveCount(0);
+    await expect(second.backdrop).toHaveCount(0);
+  });
+
+  test("enters, traps and restores focus around the compare dialog", async ({ page }) => {
+    const { dialog, trigger } = await openCompareDialog(page);
+    const close = dialog.locator("#cmpX");
+    const controls = dialog.locator("a[href],button");
+    await expect(close).toBeFocused();
+    await page.keyboard.press("Shift+Tab");
+    await expect(controls.last()).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(close).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+  });
+
+  test("locks body scrolling while the compare dialog is open", async ({ page }) => {
+    const previousOverflow = await page.evaluate(() => document.body.style.overflow);
+    const { dialog } = await openCompareDialog(page);
+    expect(await page.evaluate(() => document.body.style.overflow)).toBe("hidden");
+    expect(await page.evaluate(() => getComputedStyle(document.body).overflow)).toContain("hidden");
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    expect(await page.evaluate(() => document.body.style.overflow)).toBe(previousOverflow);
   });
 });

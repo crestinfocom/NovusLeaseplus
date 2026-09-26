@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import "./../admin.css";
-import AdminLoginForm from "./AdminLoginForm";
+import { redirect } from "next/navigation";
+import { adminLoginUrl } from "@/lib/auth-redirect";
 
 export const metadata: Metadata = {
   title: "Admin Console",
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminLoginPage() {
-  return <AdminLoginForm />;
+  redirect(adminLoginUrl("/admin/dashboard"));
 }

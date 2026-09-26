@@ -2,31 +2,30 @@
 
 import { useState } from "react";
 import { inr } from "@/lib/catalog";
+import type { StatusJourney } from "@/lib/terms";
 
 interface LookupResult {
   ref: string;
   typeLabel: string;
   status: string;
   statusLabel: string;
-  journey: { label: string; steps: string[]; isDone: boolean };
+  journey: StatusJourney;
   carName: string;
   city: string;
   startDate: string;
   endDate: string;
   totalAmount: number;
-  baseAmount: number;
   discountAmount: number;
-  customerName: string;
-  createdAt: string;
 }
 
-const ORDER = ["PENDING", "CONFIRMED", "PICKED_UP", "RETURNED", "COMPLETED"];
+type LookupResponse = {
+  ok?: boolean;
+  error?: string;
+  booking?: LookupResult;
+};
 
-function progressFor(status: string): number {
-  if (status === "CANCELLED") return 0;
-  const i = ORDER.indexOf(status);
-  return i < 0 ? 0 : i;
-}
+const SERVER_ERROR =
+  "We could not fetch the booking right now. Try again shortly.";
 
 export default function TrackLookup() {
   const [ref, setRef] = useState<string>("");
@@ -39,8 +38,8 @@ export default function TrackLookup() {
 
   async function lookup(e: React.FormEvent) {
     e.preventDefault();
-    const q = ref.trim();
-    if (!q) {
+    const query = ref.trim().toUpperCase();
+    if (!query) {
       setState("error");
       setError("Enter the booking reference from your confirmation e-mail.");
       setData(null);
@@ -49,28 +48,43 @@ export default function TrackLookup() {
     setState("loading");
     setError("");
     setData(null);
+
+    let response: Response;
     try {
-      const res = await fetch(
-        `/api/bookings/lookup?ref=${encodeURIComponent(q)}`
+      response = await fetch(
+        `/api/bookings/lookup?ref=${encodeURIComponent(query)}`,
+        { cache: "no-store" }
       );
-      const json = await res.json();
-      if (!res.ok || !json.ok) {
-        setState("error");
-        setError(json?.error ?? "We could not fetch the booking right now. Try again shortly.");
-        return;
-      }
-      setFinalRef(q.toUpperCase());
-      window.localStorage.setItem("nl_last_ref", q.toUpperCase());
-      setData(json.booking);
-      setState("ok");
     } catch {
       setState("error");
       setError("Looks like you are offline. Check your connection and try again.");
+      return;
     }
-  }
 
-  const progress =
-    state === "ok" && data ? progressFor(data.status) : 0;
+    let json: LookupResponse | null = null;
+    try {
+      json = (await response.json()) as LookupResponse;
+    } catch {
+      setState("error");
+      setError(
+        response.ok
+          ? "We could not read the booking response. Try again shortly."
+          : SERVER_ERROR,
+      );
+      return;
+    }
+
+    if (!response.ok || !json?.ok || !json.booking) {
+      setState("error");
+      setError(json?.error ?? SERVER_ERROR);
+      return;
+    }
+
+    setFinalRef(query);
+    window.localStorage.setItem("nl_last_ref", query);
+    setData(json.booking);
+    setState("ok");
+  }
 
   return (
     <div className="track-card" data-testid="track-card">
@@ -145,9 +159,11 @@ export default function TrackLookup() {
               <b>
                 <span
                   className={`tk-pill ${
-                    data.status === "CANCELLED"
+                    data.status === "PENDING"
+                      ? "pending"
+                      : data.status === "CANCELLED"
                       ? "cancelled"
-                      : data.status === "COMPLETED" || data.status === "RETURNED"
+                      : data.status === "COMPLETED"
                       ? "completed"
                       : "active"
                   }`}
@@ -164,36 +180,71 @@ export default function TrackLookup() {
             )}
           </div>
 
-          <div className="tjourney" aria-label={`Status: ${data.journey.label}`}>
-            <h4 style={{ margin: "18px 0 10px" }}>{data.journey.label}</h4>
-            {data.journey.steps.map((s, i) => {
-              const cls =
-                i < progress ? "done" : i === progress && !data.journey.isDone ? "now" : "";
-              return (
-                <div className={`jstep ${cls}`} key={i}>
-                  <div className="jn">{i + 1}</div>
-                  <div className="jt">
-                    <h4>{cls === "done" ? "Completed" : cls === "now" ? "In progress" : "Up next"}</h4>
-                    <p>{s}</p>
+          <section
+            className="tjourney"
+            data-testid="track-timeline"
+            aria-label={`Status: ${data.journey.label}`}
+            aria-labelledby="track-timeline-heading"
+          >
+            <h3 id="track-timeline-heading" style={{ margin: "18px 0 10px" }}>
+              {data.journey.label}
+            </h3>
+            <div role="list">
+              {data.journey.milestones.map((milestone, index) => {
+                const stateLabel =
+                  milestone.state === "completed"
+                    ? "Completed"
+                    : milestone.state === "current"
+                    ? "In progress"
+                    : milestone.state === "cancelled"
+                    ? "Cancelled"
+                    : "Up next";
+                const stateClass =
+                  milestone.state === "completed"
+                    ? "done"
+                    : milestone.state === "current"
+                    ? "now"
+                    : "";
+                return (
+                  <div
+                    className={`jstep ${stateClass}`}
+                    data-state={milestone.state}
+                    aria-current={milestone.state === "current" ? "step" : undefined}
+                    key={milestone.id}
+                    role="listitem"
+                  >
+                    <div className="jn" aria-hidden="true">
+                      {index + 1}
+                    </div>
+                    <div className="jt">
+                      <h4>{milestone.label}</h4>
+                      <p>{stateLabel}</p>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </section>
 
-          <div className="tnext" data-testid="track-next">
-            <h4>Your next steps</h4>
-            <ol>
-              {data.journey.steps.map((s, i) => (
-                <li key={i}>{s}</li>
-              ))}
-            </ol>
-          </div>
+          {data.journey.nextActions.length > 0 && (
+            <section
+              className="tnext"
+              data-testid="track-next"
+              aria-labelledby="track-next-heading"
+            >
+              <h4 id="track-next-heading">Your next actions</h4>
+              <ol>
+                {data.journey.nextActions.map((action) => (
+                  <li key={action}>{action}</li>
+                ))}
+              </ol>
+            </section>
+          )}
 
           <p style={{ fontSize: ".78rem", color: "var(--muted)", marginTop: 14 }}>
             Need help? Write to{" "}
             <b style={{ color: "var(--gold-deep)" }}>help@novuslease.in</b> or
-            call 24×7 support — quote reference <b>{data.ref}</b>.
+            call 24×7 support — booking reference <b>{data.ref}</b>.
           </p>
         </div>
       )}
